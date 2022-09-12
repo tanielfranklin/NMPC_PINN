@@ -78,7 +78,7 @@ ymk = yss  # condição inicial para o EKF
 xmk[2] = 0.0106  # inicia a vazao de um x0 diferente para testar converg.
 xmk2 = x0
 ymk2 = yss  # estados da simulação do modelo nominal
-utg = 50   # target na choke
+utg = 70   # target na choke
 pm = 2e6   # pressão da manifold
 # ymax[0,0] = yss[0]; # Pressao de intake
 # Regiao de operação
@@ -92,7 +92,7 @@ xpk = xss
 Du = np.ones((nmpc.Hc*bcs.nu, 1))
 ysp = yss
 # --- simulação -------------------------------- ------------------------------
-tsim = 200     # seconds
+tsim = 50     # seconds
 nsim = int(tsim/Ts)   # number of steps
 uk = np.zeros((bcs.nu, int(nsim)))
 Vruido = ((0.01/3)*np.diag(yss[:, 0]))**2
@@ -101,111 +101,7 @@ Du = np.zeros((nmpc.Hc*bcs.nu, 1))
 # # Parameters: initial states, du,utg, u0,ysp
 P = np.vstack([x0, Du, utg, uk_1, Du, yss])
 
-
-
-
-nx = nmpc.bcs.nx
-ny = nmpc.bcs.ny
-nu = nmpc.bcs.nu
-Qu = np.diag(np.array([nmpc.qu]))  # Weights control effort 
-Q = np.diag(np.array([nmpc.q[0, :]]))  # Weights setpoint error
-R = np.diag(np.tile(nmpc.r, (1, nmpc.Hc))[0, :]) # Weights economic target error
-opti = nmpc.opti
-# define decision variables
-du = opti.variable(4)
-ysp = opti.variable(2)
-x0 = P[:nx]  # Get X0 from P
-print('x0'); print(x0.T)
-
-x0n = bcs.norm_x(x0)  # Normalize states x0
-print('x0n'); print(x0n.T)
-
-len_du = nu*nmpc.Hc
-utg = P[nx+len_du:nx+len_du+1,0]  # Get economic target from P
-print('utg',utg)
-
-# Get initial control actions from P
-ysp0 = P[-ny:, :]
-print('ysp0'); print(ysp0.T)
-
-ysp02 = bcs.c_eq_medicao(x0n)
-du0 = P[nx+len_du+1+nu:nx+len_du+1+nu+len_du]
-print('du0'); print(du0.T)
-
-# Initialize decision variables
-opti.set_initial(ysp, ysp0)
-opti.set_initial(du, du0)
-# Recovering predictions of states and outputs matrices
-X, Y, u = nmpc.FF(du, P)
-## Teste
-# print(nmpc.bcs.eq_estado(x0n,uss))
-# xss = nmpc.bcs.integrator_ode(x0, uk_1)
-# xssn=bcs.norm_x(xss)
-# print(xssn.T)
-# # xss = nmpc.bcs.integrator_ode(xss, uk_1)
-# # xssn=nmpc.bcs.norm_x(xss)
-# # print(xssn.T)
-# xss = nmpc.RK_ode_integrator(x0, uk_1)
-# xssn=nmpc.bcs.norm_x(xss)
-# print(xssn.T)
-# xss = nmpc.RK_ode_integrator(xss, uk_1)
-# xssn=nmpc.bcs.norm_x(xss)
-# print(xssn.T)
-# xss = nmpc.RK_ode_integrator(xss, uk_1)
-# xssn=nmpc.bcs.norm_x(xss)
-# print(xssn.T)
-
-print('Matriz de predição inicial')
-X, Y, u = nmpc.FF(du0, P)
-print(X)
-X, Y, u = nmpc.FF(du, P)
-# #Define dynamic constraints  dependent of predictions steps
-# for k in range(nmpc.Hp):
-#     # opti.subject_to(X[:, k+1] == X[:, k])
-#     opti.subject_to(Y[:, k+1] >= ymin)
-#     opti.subject_to(Y[:, k+1] <= ymax)
-# #Define contraints related to maximum and minimum du rate
-
-opti.subject_to(np.tile(nmpc.bcs.dumax, (nu, 1))
-                >= du)  # Maximum control rate
-opti.subject_to(-np.tile(nmpc.bcs.dumax, (nu, 1))
-                <= du)  # Minimun control rate
-
-
-
-obj_1, obj_2 = 0, 0
-for k in range(nmpc.Hp):
-    # Track ysp_opt
-    obj_1 = obj_1+(Y[:, k]-ysp).T@Q@(Y[:, k]-ysp)
-    # Track Maximum zc
-    obj_2 = obj_2+((u[1] - utg).T*Qu*(u[1] - utg))
-
-#obj=obj_1.printme(0)+ obj_2.printme(1)+(du.T@R@du).printme(2)
-
-obj = obj_1+ obj_2+(du.T@R@du)
-#nmpc.Fobj=cs.Function('Fobj',[du,ysp],[nmpc.obj],['du','ysp'],['obj'])
-
-opti.minimize(obj)
-p_opts = {"expand": True}
-s_opts = {"max_iter": 80, "print_level": 3}
-opti.solver("ipopt", p_opts, s_opts)
-sol = opti.solve()
-Du0 = np.zeros((nmpc.Hc*bcs.nu, 1))
-# # Parameters: initial states, du,utg, u0,ysp
-P = np.vstack([x0, Du0, utg, uk_1, Du, yss])
-Du = nmpc.opti.variable(4)
-
-print((nmpc.FF(Du, P)))
-Du = sol.value(du)
-ysp_opt = sol.value(ysp)[:ny]
-print(Du,ysp_opt)
-#nmpc.nmpc_solver(P, ymin, ymax)  # how
-#print((nmpc.Fobj(Du,ysp)))
-exit()
-
-
-
-
+Du, ysp=nmpc.nmpc_solver(P, ymin, ymax)
 
 Yk = yss
 Xk = xss.reshape((xss.shape[0], 1))
@@ -242,12 +138,13 @@ for k in range(nsim):
     ymax[1, 0] = max(hlim)
 
     # tic
-
-    Du, ysp = bcs.nmpc_solver(uk_1, utg, ypk, xpk, ymk2, pm, Du, ymin, ymax)
-
-    uk[:, k:k+1] = uk_1 + Du[:bcs.Hc, :]
-    uk_1 = uk_1 + Du[:bcs.Hc, :]  # optimal input at time step k
-    Du = np.vstack([Du[:bcs.Hc, :], np.zeros((bcs.nu, 1))])
+    
+    Du, ysp = nmpc.nmpc_solver(P, ymin, ymax)
+    uk[:, k:k+1] = uk_1 + Du[:nmpc.Hc, :]
+    uk_1 = uk_1 + Du[:nmpc.Hc, :]  # optimal input at time step k
+    Du = np.vstack([Du[:nmpc.Hc, :], np.zeros((bcs.nu, 1))])
+    #update input vector with the states and 
+    P = np.vstack([x0, Du, utg, uk_1, Du, yss])
 
     # J_k[k] = fval  # cost function
 
@@ -259,7 +156,7 @@ for k in range(nsim):
     # Plant
 
     xpk = bcs.integrator_ode(x0, uk_1)
-    print(xpk)
+    #print(xpk)
     #  Nominal Model
     x0 = xpk
     ypk = bcs.eq_medicao(x0)
@@ -278,3 +175,98 @@ grafico.plot_y(Ysp, Yk, YLim)
 bcs.envelope.size_env = (4, 4)
 bcs.envelope.grafico_envelope(Xk, Yk)
 plt.show()
+
+exit()
+
+nx = nmpc.bcs.nx
+ny = nmpc.bcs.ny
+nu = nmpc.bcs.nu
+Qu = np.diag(np.array([nmpc.qu]))  # Weights control effort 
+Q = np.diag(np.array([nmpc.q[0, :]]))  # Weights setpoint error
+R = np.diag(np.tile(nmpc.r, (1, nmpc.Hc))[0, :]) # Weights economic target error
+opti = nmpc.opti
+# define decision variables
+du = opti.variable(4)
+ysp = opti.variable(2)
+x0 = P[:nx]  # Get X0 from P
+print('x0'); print(x0.T)
+
+x0n = bcs.norm_x(x0)  # Normalize states x0
+print('x0n'); print(x0n.T)
+
+len_du = nu*nmpc.Hc
+utg = P[nx+len_du:nx+len_du+1,0]  # Get economic target from P
+print('utg',utg)
+
+# Get initial control actions from P
+ysp0 = P[-ny:, :]
+print('ysp0'); print(ysp0.T)
+
+ysp02 = bcs.c_eq_medicao(x0n)
+du0 = P[nx+len_du+1+nu:nx+len_du+1+nu+len_du]
+print('du0'); print(du0.T)
+
+# Initialize decision variables
+opti.set_initial(ysp, ysp0)
+opti.set_initial(du, du0)
+# Recovering predictions of states and outputs matrices
+# X, Y, u = nmpc.FF(du, P)
+# print('Matriz de predição inicial')
+# X, Y, u = nmpc.FF(du0, P)
+# print(X)
+X, Y, u = nmpc.FF(du, P)
+
+
+# #Define dynamic constraints  dependent of predictions steps
+for k in range(nmpc.Hp):
+    # opti.subject_to(X[:, k+1] == X[:, k])
+    opti.subject_to(Y[:, k+1] >= ymin)
+    opti.subject_to(Y[:, k+1] <= ymax)
+# #Define contraints related to maximum and minimum du rate
+
+opti.subject_to(np.tile(nmpc.bcs.dumax, (nu, 1))
+                >= du)  # Maximum control rate
+opti.subject_to(-np.tile(nmpc.bcs.dumax, (nu, 1))
+                <= du)  # Minimun control rate
+
+
+
+obj_1, obj_2 = 0, 0
+for k in range(nmpc.Hp):
+    # Track ysp_opt
+    obj_1 = obj_1+(Y[:, k]-ysp).T@Q@(Y[:, k]-ysp)
+    # Track Maximum zc
+    obj_2 = obj_2+((u[1] - utg).T*Qu*(u[1] - utg))
+
+#obj=obj_1.printme(0)+ obj_2.printme(1)+(du.T@R@du).printme(2)
+
+obj = obj_1+ obj_2+(du.T@R@du)
+#nmpc.Fobj=cs.Function('Fobj',[du,ysp],[nmpc.obj],['du','ysp'],['obj'])
+
+
+opti.minimize(obj)
+p_opts = {"expand": True}
+s_opts = {"max_iter": 80, "print_level": 3}
+#opti.solver("ipopt", p_opts, s_opts)
+opti.solver("ipopt")
+sol = opti.solve()
+
+
+Du0 = np.zeros((nmpc.Hc*bcs.nu, 1))
+# # Parameters: initial states, du,utg, u0,ysp
+P = np.vstack([x0, Du0, utg, uk_1, Du, yss])
+Du = nmpc.opti.variable(4)
+
+print((nmpc.FF(Du, P)))
+Du = sol.value(du)
+ysp_opt = sol.value(ysp)[:ny]
+print(Du,ysp_opt)
+#nmpc.nmpc_solver(P, ymin, ymax)  # how
+#print((nmpc.Fobj(Du,ysp)))
+exit()
+
+
+
+
+
+

@@ -1,6 +1,6 @@
 
 from ast import arg
-from casadi import MX, SX, fabs, hcat, horzcat, vertcat, Opti, Function, nlpsol, sum1, qpsol, vcat, integrator
+from casadi import MX, fabs, hcat, horzcat, vertcat, Opti, Function, nlpsol, sum1, qpsol, vcat, integrator
 from scipy.integrate import solve_ivp
 from casadi import sqrt as csqrt
 import matplotlib.pyplot as plt
@@ -30,10 +30,15 @@ class BCS_model(object):
         self.estacionario = None
         self.matrizes_ekf = None
         self.sea_nl = None
+        self.xss=np.vstack([8311024.82175957, 2990109.06207437,
+                0.00995042241351780, 50, 50])
+        self.uss = np.vstack([50, 50])
+        self.yss = np.vstack([6000142.88550200, 592.126490003812])
         self.BCS_equation()
         self.dudt_max = MX.sym("dudt_max", 2)  # Exogena
 
         self.envelope = BcsEnvelope()
+        
 
     def norm_x(self, x):
         """Normalize x 
@@ -139,13 +144,26 @@ class BCS_model(object):
         }
 
         MMQ = {'x': x, 'f': self.J, 'p': u}
-        # self.solver = nlpsol('solver', 'cvodes', MMQ, opt)
-        self.solver = nlpsol('solver', 'cvodes', MMQ)
+        self.solver = nlpsol('solver', 'ipopt', MMQ, opt)
+        
         args = {
             'lbx': np.zeros((self.nx, 1)),
             # m�ximo
             'ubx': np.full((self.nx, 1), np.inf)
         }
+        # CVODES from the SUNDIALS suite
+           # CVODES from the SUNDIALS suite
+        dae = {'x':x, 'p':u, 'ode':self.dxdt, 'quad':self.J}
+        opts = {'tf':self.Ts, 'expand':True}
+        self.F = integrator('F', 'cvodes', dae, opts)
+        
+        # # Evaluate at a test point
+        # print("Steadystate evaluation")
+        # print(self.xss.T)
+        # Fk = self.F(x0=self.norm_x(self.xss),p=self.uss)
+        # print(self.desnorm_x(Fk['xf']))
+
+
 
     def eq_medicao(self, x):
         pbh = x[0]
@@ -268,6 +286,9 @@ class BCS_model(object):
     #         y.append(ymk) # dimension Hp*ny
     #     y=vertcat(y)
         # return y
+    
+
+        
 
     def RK_integrator(self, x, u):
         sol = solve_ivp(self.bcs_model, [0, self.Ts], [x, u], method='RK45')

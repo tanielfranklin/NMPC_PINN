@@ -55,21 +55,16 @@ class NMPC(object):
         # starting filling prediction matrix
         X_pred = [X0]
         Y_pred = [Y0]
+        
+    
+
         # Filling predictions matrix with values
         print("Creating predictions matrices")
         for k in range(self.Hp):
             u0 = u0 + future_du[k*nu:k*nu+2, :] #applying exogenous inputs
-            
-            k1 = self.bcs.eq_estado(X0, u0)
-            k2 = self.bcs.eq_estado(X0 + DT/2 * k1, u0)
-            k3 = self.bcs.eq_estado(X0 + DT/2 * k2, u0)
-            k4 = self.bcs.eq_estado(X0 + DT * k3, u0)
-            X_next = X0+DT/6*(k1 + 2*k2 + 2*k3 + k4)
-            #print(self.RK_ode_integrator(X0,P[nx+len_du+1:nx+len_du+1+nu, :]).T)
-            
             ## using integrator
-            sol = self.bcs.solver(x0=X0, p=u0)['x']
-            X_next = cs.vertcat(sol)
+            sol = self.bcs.F(x0=X0, p=u0)
+            X_next = cs.vertcat(sol['xf'])
             ##
             X0 = X_next
             X_pred.append(X_next)
@@ -78,9 +73,6 @@ class NMPC(object):
 
         X = cs.hcat(X_pred)
         Y = cs.hcat(Y_pred)
-        #print(self.bcs.norm_x(self.bcs.integrator_ode(self.bcs.desnorm_x(np.vstack([0.656938, 0.589199, 0.478805, 50, 50])), u0)))
-        print("Variável X")
-
 
         self.FF = cs.Function('FF', [du, P], [X, Y, u0], ['du',
                               'P'], ['X', 'Y', 'u0'])
@@ -95,8 +87,8 @@ class NMPC(object):
         R = np.diag(np.tile(self.r, (1, self.Hc))[0, :]) # Weights economic target error
         opti = self.opti
         # define decision variables
-        du = opti.variable(4)
-        ysp = opti.variable(2)
+        du = opti.variable(nu*self.Hc)
+        ysp = opti.variable(ny)
         x0 = P[:nx]  # Get X0 from P
         x0 = (x0-self.bcs.par.x0)/self.bcs.par.xc  # Normalize states x0
 
@@ -110,31 +102,35 @@ class NMPC(object):
         opti.set_initial(du, du0)
         # Recovering predictions of states and outputs matrices
         X, Y, u = self.FF(du, P)
-        # Define dynamic constraints which dependend of predictions steps
-        # for k in range(self.Hp):
-        #     # opti.subject_to(X[:, k+1] == X[:, k])
-        #     opti.subject_to(Y[:, k+1] >= ymin)
-            #opti.subject_to(Y[:, k+1] <= ymax)
+       
+        # #Define dynamic constraints  dependent of predictions steps
+        obj_1, obj_2 = 0, 0
+        for k in range(self.Hp):
+            # opti.subject_to(X[:, k+1] == X[:, k])
+            opti.subject_to(Y[:, k+1] >= ymin)
+            opti.subject_to(Y[:, k+1] <= ymax)
+            # Track ysp_opt
+            obj_1 = obj_1+(Y[:, k]-ysp).T@Q@(Y[:, k]-ysp)
+            # Track Maximum zc
+            obj_2 = obj_2+((u[1] - utg).T*Qu*(u[1] - utg))
+
+        self.obj = obj_1 + obj_2+(du.T@R@du)
+        self.Fobj=cs.Function('Fobj',[du,ysp],[self.obj],['du','ysp'],['obj'])
         # Define contraints related to maximum and minimum du rate
         opti.subject_to(np.tile(self.bcs.dumax, (nu, 1))
                         >= du)  # Maximum control rate
         opti.subject_to(-np.tile(self.bcs.dumax, (nu, 1))
                         <= du)  # Minimun control rate
 
-        
-        obj_1, obj_2 = 0, 0
-        for k in range(self.Hp):
-            # Track ysp_opt
-            obj_1 = obj_1+(Y[:, k]-ysp).T@Q@(Y[:, k]-ysp)
-            # Track Maximum zc
-            obj_2 = obj_2+((u[1] - utg).T*Qu*(u[1] - utg))
-
-        #obj=obj_1.printme(0)+ obj_2.printme(1)+(du.T@R@du).printme(2)
-
-        self.obj = obj_1 + obj_2+(du.T@R@du)
-        self.Fobj=cs.Function('Fobj',[du,ysp],[self.obj],['du','ysp'],['obj'])
-        print(self.obj)
-        # opti.minimize(self.obj)
+ 
+        opti.minimize(self.obj)
+        opts = {'ipopt.print_level': 0, 'print_time': 0, 'ipopt.sb': 'yes'}
+        opts = {'ipopt.print_level': 3}
+        opti.solver("ipopt",opts)
+        sol = opti.solve()
+        Du = np.vstack(sol.value(du))
+        ysp_opt = np.vstack(sol.value(ysp)[:ny])
+        return Du,ysp_opt
         # # opti.subject_to(du+M_dumax>=0)
         # # opti.subject_to(-du+M_dumax>=0)
         # p_opts = {"expand": True}

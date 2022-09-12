@@ -56,7 +56,7 @@ class NMPC(object):
         X_pred = [X0]
         Y_pred = [Y0]
         # Filling predictions matrix with values
-        print("Loop")
+        print("Creating predictions matrices")
         for k in range(self.Hp):
             u0 = u0 + future_du[k*nu:k*nu+2, :] #applying exogenous inputs
             
@@ -65,11 +65,11 @@ class NMPC(object):
             k3 = self.bcs.eq_estado(X0 + DT/2 * k2, u0)
             k4 = self.bcs.eq_estado(X0 + DT * k3, u0)
             X_next = X0+DT/6*(k1 + 2*k2 + 2*k3 + k4)
-            print(self.RK_ode_integrator(X0,P[nx+len_du+1:nx+len_du+1+nu, :]).T)
+            #print(self.RK_ode_integrator(X0,P[nx+len_du+1:nx+len_du+1+nu, :]).T)
             
             ## using integrator
             sol = self.bcs.solver(x0=X0, p=u0)['x']
-            X_next = np.array(sol)
+            X_next = cs.vertcat(sol)
             ##
             X0 = X_next
             X_pred.append(X_next)
@@ -78,10 +78,9 @@ class NMPC(object):
 
         X = cs.hcat(X_pred)
         Y = cs.hcat(Y_pred)
-        print(self.bcs.norm_x(self.bcs.integrator_ode(self.bcs.desnorm_x(np.vstack([0.656938, 0.589199, 0.478805, 50, 50])), u0)))
+        #print(self.bcs.norm_x(self.bcs.integrator_ode(self.bcs.desnorm_x(np.vstack([0.656938, 0.589199, 0.478805, 50, 50])), u0)))
         print("Variável X")
-        print(X)
-        print(X)
+
 
         self.FF = cs.Function('FF', [du, P], [X, Y, u0], ['du',
                               'P'], ['X', 'Y', 'u0'])

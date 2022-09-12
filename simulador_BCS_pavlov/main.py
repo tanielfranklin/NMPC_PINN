@@ -138,33 +138,33 @@ opti.set_initial(du, du0)
 # Recovering predictions of states and outputs matrices
 X, Y, u = nmpc.FF(du, P)
 ## Teste
-print(nmpc.bcs.eq_estado(x0n,uss))
-xss = nmpc.bcs.integrator_ode(x0, uk_1)
-xssn=bcs.norm_x(xss)
-print(xssn.T)
-xss = nmpc.bcs.integrator_ode(xss, uk_1)
-xssn=nmpc.bcs.norm_x(xss)
-print(xssn.T)
-xss = nmpc.RK_ode_integrator(x0, uk_1)
-xssn=nmpc.bcs.norm_x(xss)
-print(xssn.T)
-xss = nmpc.RK_ode_integrator(xss, uk_1)
-xssn=nmpc.bcs.norm_x(xss)
-print(xssn.T)
-xss = nmpc.RK_ode_integrator(xss, uk_1)
-xssn=nmpc.bcs.norm_x(xss)
-print(xssn.T)
+# print(nmpc.bcs.eq_estado(x0n,uss))
+# xss = nmpc.bcs.integrator_ode(x0, uk_1)
+# xssn=bcs.norm_x(xss)
+# print(xssn.T)
+# # xss = nmpc.bcs.integrator_ode(xss, uk_1)
+# # xssn=nmpc.bcs.norm_x(xss)
+# # print(xssn.T)
+# xss = nmpc.RK_ode_integrator(x0, uk_1)
+# xssn=nmpc.bcs.norm_x(xss)
+# print(xssn.T)
+# xss = nmpc.RK_ode_integrator(xss, uk_1)
+# xssn=nmpc.bcs.norm_x(xss)
+# print(xssn.T)
+# xss = nmpc.RK_ode_integrator(xss, uk_1)
+# xssn=nmpc.bcs.norm_x(xss)
+# print(xssn.T)
 
-
+print('Matriz de predição inicial')
 X, Y, u = nmpc.FF(du0, P)
 print(X)
-exit()
-# Define dynamic constraints which dependend of predictions steps
+X, Y, u = nmpc.FF(du, P)
+# #Define dynamic constraints  dependent of predictions steps
 # for k in range(nmpc.Hp):
 #     # opti.subject_to(X[:, k+1] == X[:, k])
 #     opti.subject_to(Y[:, k+1] >= ymin)
-    #opti.subject_to(Y[:, k+1] <= ymax)
-# Define contraints related to maximum and minimum du rate
+#     opti.subject_to(Y[:, k+1] <= ymax)
+# #Define contraints related to maximum and minimum du rate
 
 opti.subject_to(np.tile(nmpc.bcs.dumax, (nu, 1))
                 >= du)  # Maximum control rate
@@ -182,28 +182,25 @@ for k in range(nmpc.Hp):
 
 #obj=obj_1.printme(0)+ obj_2.printme(1)+(du.T@R@du).printme(2)
 
-nmpc.obj = obj_1+ obj_2+(du.T@R@du)
-nmpc.Fobj=cs.Function('Fobj',[du,ysp],[nmpc.obj],['du','ysp'],['obj'])
+obj = obj_1+ obj_2+(du.T@R@du)
+#nmpc.Fobj=cs.Function('Fobj',[du,ysp],[nmpc.obj],['du','ysp'],['obj'])
 
-opti.minimize(nmpc.obj)
+opti.minimize(obj)
 p_opts = {"expand": True}
 s_opts = {"max_iter": 80, "print_level": 3}
 opti.solver("ipopt", p_opts, s_opts)
 sol = opti.solve()
-Du = np.zeros((nmpc.Hc*bcs.nu, 1))
+Du0 = np.zeros((nmpc.Hc*bcs.nu, 1))
 # # Parameters: initial states, du,utg, u0,ysp
-P = np.vstack([x0, Du, utg, uk_1, Du, yss])
-# nmpc.du=Du
-# print(nmpc.Matrix_XY(P))
-
-
-
+P = np.vstack([x0, Du0, utg, uk_1, Du, yss])
 Du = nmpc.opti.variable(4)
-ysp = nmpc.opti.variable(2)
+
 print((nmpc.FF(Du, P)))
-# print((nmpc.FF(Du,P)).has_free())
+Du = sol.value(du)
+ysp_opt = sol.value(ysp)[:ny]
+print(Du,ysp_opt)
 #nmpc.nmpc_solver(P, ymin, ymax)  # how
-print((nmpc.Fobj(Du,ysp)))
+#print((nmpc.Fobj(Du,ysp)))
 exit()
 
 

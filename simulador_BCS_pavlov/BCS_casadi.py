@@ -139,7 +139,8 @@ class BCS_model(object):
         }
 
         MMQ = {'x': x, 'f': self.J, 'p': u}
-        self.solver = nlpsol('solver', 'ipopt', MMQ, opt)
+        # self.solver = nlpsol('solver', 'cvodes', MMQ, opt)
+        self.solver = nlpsol('solver', 'cvodes', MMQ)
         args = {
             'lbx': np.zeros((self.nx, 1)),
             # m�ximo

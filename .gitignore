@@ -1,2 +1,54 @@
 simulador_BCS_pavlov/__pycache__/nmpc_class.cpython-39.pyc
 simulador_BCS_pavlov/__pycache__/BCS_casadi.cpython-39.pyc
+casadi-example_pack-v3.4.4.zip
+example pack/mhe_spring_damper.pdf
+example pack/README.txt
+example pack/user_guide.pdf
+example pack/matlab/callback.m
+example pack/matlab/daebuilder.m
+example pack/matlab/direct_collocation.m
+example pack/matlab/direct_multiple_shooting.m
+example pack/matlab/direct_single_shooting.m
+example pack/matlab/lotka_volterra_minlp.m
+example pack/matlab/MyCallback.m
+example pack/matlab/race_car.m
+example pack/matlab/rosenbrock.m
+example pack/matlab/sensitivity_analysis.m
+example pack/matlab/sysid.m
+example pack/python/accessing_mx_algorithm.py
+example pack/python/accessing_sx_algorithm.py
+example pack/python/biegler_10_1.py
+example pack/python/c_code_generation.py
+example pack/python/callback.py
+example pack/python/chain_qp.py
+example pack/python/dae_collocation.py
+example pack/python/dae_multiple_shooting.py
+example pack/python/dae_single_shooting.py
+example pack/python/daebuilder.py
+example pack/python/direct_collocation.py
+example pack/python/direct_multiple_shooting.py
+example pack/python/direct_single_shooting.py
+example pack/python/implicit_runge-kutta.py
+example pack/python/ipopt_nl.py
+example pack/python/lotka_volterra_minlp.py
+example pack/python/lqr_control.py
+example pack/python/mhe_spring_damper.py
+example pack/python/parallel_map.py
+example pack/python/race_car.py
+example pack/python/rocket.py
+example pack/python/rosenbrock.py
+example pack/python/sensitivity_analysis.py
+example pack/python/simple_lp.py
+example pack/python/simple_nlp.py
+example pack/python/simulation.py
+example pack/python/sysid.py
+example pack/python/thermodynamics_example.py
+example pack/python/vdp_collocation.py
+example pack/python/vdp_collocation2.py
+example pack/python/vdp_dynamic_programming.py
+example pack/python/vdp_indirect_multiple_shooting.py
+example pack/python/vdp_indirect_single_shooting.py
+linearizacao_bcs.m
+NMPC_BCS.m
+simulador_BCS_pavlov/single_shoot_direct.py
+simulador_BCS_pavlov/__pycache__/nmpc_class.cpython-39.pyc

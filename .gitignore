@@ -52,3 +52,5 @@ linearizacao_bcs.m
 NMPC_BCS.m
 simulador_BCS_pavlov/single_shoot_direct.py
 simulador_BCS_pavlov/__pycache__/nmpc_class.cpython-39.pyc
+simulador_BCS_pavlov/__pycache__/nmpc_class.cpython-39.pyc
+simulador_BCS_pavlov/teste.py

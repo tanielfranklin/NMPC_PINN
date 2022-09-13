@@ -9,18 +9,17 @@ from bcs_envelope import BcsEnvelope
 from nmpc_class import NMPC
 
 
-# Nesse codigo, compilei a função fmincon em um executavel MEX,
+
 # assim o tempo computacional do solver reduz consideravelmente!!
 # codegen -lang:c++ solverNMPC -args {uk_1,Hp,Hc,q,r,qu,utg,Ts,nu,ny,ypk,xmk,ymk,pm,DuYsp0,Ain,Bin,Aeq,beq,Dumin,Dumax} -report
 # steady-state conditions
 xss = np.vstack([8311024.82175957, 2990109.06207437,
-                0.00995042241351780, 50, 50])
-
+                0.00995042241351780, 50., 50.])
 
 nx = 5
 nu = 2
 
-uss = np.vstack([50, 50])
+uss = np.vstack([50., 50.])
 yss = np.vstack([6000142.88550200, 592.126490003812])
 # Controller parameters
 Hp = 10  # prediction horizon 
@@ -53,9 +52,9 @@ bcs = nmpc.bcs
 # --------------------------------------------------------------------------
 # Initial condition (preferred steady-state)
 # --------------------------------------------------------------------------
-uk_1 = np.vstack([50, 50])  # manipulated variable
+uk_1 = np.vstack([50., 50.])  # manipulated variable
 x0 = np.vstack([8311024.82175957, 2990109.06207437,
-               0.00995042241351780, 50, 50])  # state variables
+               0.00995042241351780, 50., 50.])  # state variables
 xss = bcs.integrator_ode(x0, uk_1)
 xssn=bcs.norm_x(xss)
 x0n = np.vstack([0.656882, 0.58981816, 0.41643043, 50.0, 50.0])
@@ -64,7 +63,7 @@ xssn = (xss-bcs.par.x0)/bcs.par.xc
 
 print(xssn.T)
 # print(x0n.T)
-utg = 50
+utg = 50.
 yss2 = bcs.c_eq_medicao(xssn)
 u0 = uss
 xmk = xss
@@ -100,9 +99,11 @@ Vruido = ((0.01/3)*np.diag(yss[:, 0]))**2
 
 Du = np.zeros((nmpc.Hc*bcs.nu, 1))
 # # Parameters: initial states, du,utg, u0,ysp
-P = np.vstack([x0, Du, utg, uk_1, Du, yss])
-
+P = np.vstack([x0, uk_1, Du, utg])
+#x0 u0 du utg
 Du, ysp=nmpc.nmpc_solver(P, ymin, ymax)
+print(Du)
+print(ysp)
 
 Yk = yss
 Xk = xss.reshape((xss.shape[0], 1))
@@ -143,9 +144,9 @@ for k in range(nsim):
     Du, ysp = nmpc.nmpc_solver(P, ymin, ymax)
     uk[:, k:k+1] = uk_1 + Du[:nmpc.Hc, :]
     uk_1 += Du[:nmpc.Hc, :]  # optimal input at time step k
-    Du = np.vstack([Du[:nmpc.Hc, :], np.zeros((bcs.nu, 1))])
-    #update input vector with the states and 
-    P = np.vstack([x0, Du, utg, uk_1, Du, yss])
+    #update input vector with the states and Du
+    P = np.vstack([x0, uk_1, Du, utg])
+    #P = np.vstack([x0, Du, utg, uk_1, Du, yss])
 
     # J_k[k] = fval  # cost function
 

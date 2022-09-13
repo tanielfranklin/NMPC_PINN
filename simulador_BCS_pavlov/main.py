@@ -35,8 +35,9 @@ umax = np.vstack([65, 100])    # upper bounds of inputs
 dumax = Ts*np.vstack([0.5, 0.5])
 # ----------------------------------------------
 # ------Normalização através dos pesos----------
-q = np.hstack([100, 1]) / (yss.T**2)  # weights on controlled variables
-q = np.hstack([1e6, 1e8]) / (yss.T**2)  # weights on controlled variables
+q = np.hstack([100, 1]) / (yss**2)  # weights on controlled variables
+q = np.hstack([1e6, 1e8]) / (yss**2)  # weights on controlled variables
+
 r = np.array([100, 1]) / (uss.T**2)  # weights on control actions
 # r = np.array([10, 10]) /(uss.T**2); # weights on control actions
 
@@ -141,7 +142,7 @@ for k in range(nsim):
     
     Du, ysp = nmpc.nmpc_solver(P, ymin, ymax)
     uk[:, k:k+1] = uk_1 + Du[:nmpc.Hc, :]
-    uk_1 = uk_1 + Du[:nmpc.Hc, :]  # optimal input at time step k
+    uk_1 += Du[:nmpc.Hc, :]  # optimal input at time step k
     Du = np.vstack([Du[:nmpc.Hc, :], np.zeros((bcs.nu, 1))])
     #update input vector with the states and 
     P = np.vstack([x0, Du, utg, uk_1, Du, yss])

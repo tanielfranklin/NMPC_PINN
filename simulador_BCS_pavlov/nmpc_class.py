@@ -34,38 +34,35 @@ class NMPC(object):
         #################################
         # self.du= np.zeros((self.Hc*self.bcs.nu, 1)) # keep commented
         # predictions of x along trajectory
+        X0= self.opti.variable(nx,1)
+        u0= self.opti.variable(nu,1)
         X = self.opti.variable(nx, self.Hp+1)
         # predictions of y along trajectory
         Y = self.opti.variable(ny, self.Hp+1)
-        # Parameters: initial states, du,utg, u0,du0,ysp
-        P = self.opti.variable(nx+nu*self.Hc+1+nu+nu*self.Hc+ny)
-        len_du = nu*self.Hc
-        DT = self.bcs.Ts
-        X0 = P[:nx]  # Get X0 from P
+                
         # normalizing the first value for predictions
         X0 = self.bcs.norm_x(X0)
         Y0 = self.bcs.c_eq_medicao(X0)  # predictions of y
-        # get intial control actions from P
-        # initial control variables Hc*nu
-        u0 = P[nx+len_du+1:nx+len_du+1+nu, :]
+               
         # Future control increments along Hp
-        u0=np.ones((2,1))*50
-        X0 = np.vstack([0.656882, 0.58981816, 0.41643043, 50.0, 50.0])
+        #u0=np.ones((2,1))*50
+        #X0 = np.vstack([0.656882, 0.58981816, 0.41643043, 50.0, 50.0])
         future_du = cs.vertcat(du, np.zeros((nu*(self.Hp-self.Hc), 1)))
         # starting filling prediction matrix
         X_pred = [X0]
         Y_pred = [Y0]
-        
+        Uk =[u0]
     
 
         # Filling predictions matrix with values
         print("Creating predictions matrices")
         for k in range(self.Hp):
-            u0 = u0 + future_du[k*nu:k*nu+2, :] #applying exogenous inputs
+            u0 += future_du[k*nu:k*nu+2, :] #applying exogenous inputs
             ## using integrator
             sol = self.bcs.F(x0=X0, p=u0)
             X_next = cs.vertcat(sol['xf'])
             ##
+            Uk.append(u0)
             X0 = X_next
             X_pred.append(X_next)
             y_next = self.bcs.c_eq_medicao(X_next)
@@ -73,9 +70,10 @@ class NMPC(object):
 
         X = cs.hcat(X_pred)
         Y = cs.hcat(Y_pred)
+        U = cs.hcat(Uk)
 
-        self.FF = cs.Function('FF', [du, P], [X, Y, u0], ['du',
-                              'P'], ['X', 'Y', 'u0'])
+        self.FF = cs.Function('FF', [du, X0,u0], [X, Y, U], ['du',
+                              'x0','u0'], ['X', 'Y', 'U'])
 
     def nmpc_solver(self, P, ymin, ymax):
         # P=np.vstack([x0,Du,utg,uk_1,yss])
@@ -83,14 +81,15 @@ class NMPC(object):
         ny = self.bcs.ny
         nu = self.bcs.nu
         Qu = np.diag(np.array([self.qu]))  # Weights control effort 
-        Q = np.diag(np.array([self.q[0, :]]))  # Weights setpoint error
+        Q = np.diag(np.tile(self.q[:,0],self.Hp)) # Weights setpoint error
+        Q = np.diag(self.q[:,0]) # Weights setpoint error
         R = np.diag(np.tile(self.r, (1, self.Hc))[0, :]) # Weights economic target error
         opti = self.opti
         # define decision variables
         du = opti.variable(nu*self.Hc)
-        ysp = opti.variable(ny)
+        ysp = opti.variable(ny,1)
         x0 = P[:nx]  # Get X0 from P
-        x0 = (x0-self.bcs.par.x0)/self.bcs.par.xc  # Normalize states x0
+        x0 = self.bcs.norm_x(x0) # Normalize states x0
 
         len_du = nu*self.Hc
         utg = P[nx+len_du:nx+len_du+1, :]  # Get economic target from P
@@ -102,31 +101,32 @@ class NMPC(object):
         opti.set_initial(du, du0)
         # Recovering predictions of states and outputs matrices
         X, Y, u = self.FF(du, P)
-       
-        # #Define dynamic constraints  dependent of predictions steps
-        obj_1, obj_2 = 0, 0
-        for k in range(self.Hp):
-            # opti.subject_to(X[:, k+1] == X[:, k])
-            opti.subject_to(Y[:, k+1] >= ymin)
-            opti.subject_to(Y[:, k+1] <= ymax)
-            # Track ysp_opt
-            obj_1 = obj_1+(Y[:, k]-ysp).T@Q@(Y[:, k]-ysp)
-            # Track Maximum zc
-            obj_2 = obj_2+((u[1] - utg).T*Qu*(u[1] - utg))
 
-        self.obj = obj_1 + obj_2+(du.T@R@du)
-        self.Fobj=cs.Function('Fobj',[du,ysp],[self.obj],['du','ysp'],['obj'])
-        # Define contraints related to maximum and minimum du rate
-        opti.subject_to(np.tile(self.bcs.dumax, (nu, 1))
-                        >= du)  # Maximum control rate
-        opti.subject_to(-np.tile(self.bcs.dumax, (nu, 1))
-                        <= du)  # Minimun control rate
+        # #Define dynamic constraints  dependent of predictions steps
+
+        obj_1,obj_2=0,0
+        for k in range(self.Hp):
+            opti.subject_to(X[:, k+1]-X[:, k]==0)
+            # opti.subject_to(Y[:, k+1] >= ymin)
+            # opti.subject_to(Y[:, k+1] <= ymax)
+            # Track ysp_opt
+            obj_1+=(Y[:,k+1]-ysp).T@Q@(Y[:,k+1]-ysp)
+            # Track Maximum zc
+            obj_2+=((u[1] - utg).T*Qu*(u[1] - utg))
+
+        obj = obj_1 + obj_2+(du.T@R@du)
+        
+        # # Define contraints related to maximum and minimum du rate
+        # opti.subject_to(np.tile(self.bcs.dumax, (nu, 1))
+        #                 >= du)  # Maximum control rate
+        # opti.subject_to(-np.tile(self.bcs.dumax, (nu, 1))
+        #                 <= du)  # Minimun control rate
 
  
-        opti.minimize(self.obj)
-        opts = {'ipopt.print_level': 0, 'print_time': 0, 'ipopt.sb': 'yes'}
-        opts = {'ipopt.print_level': 3}
-        opti.solver("ipopt",opts)
+        opti.minimize(obj)
+        # opts = {'ipopt.print_level': 0, 'print_time': 0, 'ipopt.sb': 'yes'}
+        # opts = {'ipopt.print_level': 3}
+        opti.solver("ipopt")
         sol = opti.solve()
         Du = np.vstack(sol.value(du))
         ysp_opt = np.vstack(sol.value(ysp)[:ny])

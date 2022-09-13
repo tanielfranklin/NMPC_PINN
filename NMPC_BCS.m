@@ -27,6 +27,9 @@ qu = 1000 ./(uss(2).^2);
 % -----------------------------------------------
 ny=size(q,2);
 nu=size(r,2);
+
+
+
 %--------------------------------------------------------------------------
 % constraints on inputs
 %--------------------------------------------------------------------------
@@ -112,8 +115,8 @@ for k = 1:nsim
 %%   control law 
 
     tic
-    [DuYsp,fval,flag,report] = solverNMPC_mex(uk_1,Hp,Hc,q,r,qu,utg,Ts,nu,ny,ypk,xmk,ymk,ymk2,pm,DuYsp0,Ain,Bin(uk_1),Aeq,beq,Dumin(ymin),Dumax(ymax));
-%     [DuYsp,fval,flag,report] = solverNMPC(uk_1,Hp,Hc,q,r,qu,utg,Ts,nu,ny,ypk,xmk,ymk,ymk2,pm,DuYsp0,Ain,Bin(uk_1),Aeq,beq,Dumin(ymin),Dumax(ymax));
+    %[DuYsp,fval,flag,report] = solverNMPC_mex(uk_1,Hp,Hc,q,r,qu,utg,Ts,nu,ny,ypk,xmk,ymk,ymk2,pm,DuYsp0,Ain,Bin(uk_1),Aeq,beq,Dumin(ymin),Dumax(ymax));
+    [DuYsp,fval,flag,report] = solverNMPC(uk_1,Hp,Hc,q,r,qu,utg,Ts,nu,ny,ypk,xmk,ymk,ymk2,pm,DuYsp0,Ain,Bin(uk_1),Aeq,beq,Dumin(ymin),Dumax(ymax));
     tcalc(k)=toc;
     
     uk(:,k) = uk_1 + DuYsp(1:nu);

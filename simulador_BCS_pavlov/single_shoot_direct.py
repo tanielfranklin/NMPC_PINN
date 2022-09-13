@@ -63,7 +63,7 @@ else:
        Q = Q + DT/6*(k1_q + 2*k2_q + 2*k3_q + k4_q)
    F = Function('F', [X0, U], [X, Q],['x0','p'],['xf','qf'])
 
-# Evaluate at a test point7
+# Evaluate at a test point
 
 Fk = F(x0=[0.2,0.3],p=0.4)
 

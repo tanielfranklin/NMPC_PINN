@@ -1,4 +1,4 @@
-defunction [Ak,Bk,Ck,Dk] = linearizacao_bcs()
+function [Ak,Bk,Ck,Dk] = linearizacao_bcs()
 x0 = sym('x0',[5 1],'real');
 uk = sym('uk',[3 1],'real');
 % Estados

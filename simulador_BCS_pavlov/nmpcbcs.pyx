@@ -64,8 +64,8 @@ class NMPC(object):
             opti.subject_to(st_next == self.bcs.F(x0=st, p=u)['xf'])
             u += future_du[k*nu:k*nu+2, :]  # update u
 
-            opti.subject_to(y >= ymin)
-            opti.subject_to(y <= ymax)
+            # opti.subject_to(y >= ymin)
+            # opti.subject_to(y <= ymax)
 
         obj = obj_1 + obj_2+(du.T@R@du)  # complete objective terms
 
@@ -78,7 +78,7 @@ class NMPC(object):
         opti.minimize(obj)
         # opts = {'ipopt.print_level': 0, 'print_time': 0, 'ipopt.sb': 'yes'}
         opts = {'ipopt.print_level': 3}
-        opts ={}
+        opts = {}
         opti.solver("ipopt", opts)
         sol = opti.solve()
         Du = np.vstack(sol.value(du))

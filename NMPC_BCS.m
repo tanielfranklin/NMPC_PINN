@@ -1,6 +1,6 @@
 %% Nesse codigo, compilei a função fmincon em um executavel MEX, 
 % assim o tempo computacional do solver reduz consideravelmente!!
-% codegen -lang:c++ solverNMPC -args {uk_1,Hp,Hc,q,r,qu,utg,Ts,nu,ny,ypk,xmk,ymk,pm,DuYsp0,Ain,Bin,Aeq,beq,Dumin,Dumax} -report
+%codegen -lang:c++ solverNMPC -args {uk_1,Hp,Hc,q,r,qu,utg,Ts,nu,ny,ypk,xmk,ymk,pm,DuYsp0,Ain,Bin,Aeq,beq,Dumin,Dumax} -report
 
 %%
 clear all
@@ -115,8 +115,8 @@ for k = 1:nsim
 %%   control law 
 
     tic
-    %[DuYsp,fval,flag,report] = solverNMPC_mex(uk_1,Hp,Hc,q,r,qu,utg,Ts,nu,ny,ypk,xmk,ymk,ymk2,pm,DuYsp0,Ain,Bin(uk_1),Aeq,beq,Dumin(ymin),Dumax(ymax));
-    [DuYsp,fval,flag,report] = solverNMPC(uk_1,Hp,Hc,q,r,qu,utg,Ts,nu,ny,ypk,xmk,ymk,ymk2,pm,DuYsp0,Ain,Bin(uk_1),Aeq,beq,Dumin(ymin),Dumax(ymax));
+    [DuYsp,fval,flag,report] = solverNMPC_mex(uk_1,Hp,Hc,q,r,qu,utg,Ts,nu,ny,ypk,xmk,ymk,ymk2,pm,DuYsp0,Ain,Bin(uk_1),Aeq,beq,Dumin(ymin),Dumax(ymax));
+    %[DuYsp,fval,flag,report] = solverNMPC(uk_1,Hp,Hc,q,r,qu,utg,Ts,nu,ny,ypk,xmk,ymk,ymk2,pm,DuYsp0,Ain,Bin(uk_1),Aeq,beq,Dumin(ymin),Dumax(ymax));
     tcalc(k)=toc;
     
     uk(:,k) = uk_1 + DuYsp(1:nu);

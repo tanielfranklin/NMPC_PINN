@@ -70,15 +70,14 @@ class NMPC(object):
         obj = obj_1 + obj_2+(du.T@R@du)  # complete objective terms
 
         # # # Define contraints related to maximum and minimum du rate
-        opti.subject_to(np.tile(self.bcs.dumax, (nu, 1))
-                        >= du)  # Maximum control rate
-        opti.subject_to(-np.tile(self.bcs.dumax, (nu, 1))
-                        <= du)  # Minimun control rate
+        # opti.subject_to(np.tile(self.bcs.dumax, (nu, 1))
+        #                 >= du)  # Maximum control rate
+        # opti.subject_to(-np.tile(self.bcs.dumax, (nu, 1))
+        #                 <= du)  # Minimun control rate
 
         opti.minimize(obj)
         # opts = {'ipopt.print_level': 0, 'print_time': 0, 'ipopt.sb': 'yes'}
         opts = {'ipopt.print_level': 3}
-        opts ={}
         opti.solver("ipopt", opts)
         sol = opti.solve()
         Du = np.vstack(sol.value(du))

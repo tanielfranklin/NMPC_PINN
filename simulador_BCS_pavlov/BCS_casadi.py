@@ -24,7 +24,7 @@ class BCS_model(object):
         self.x = MX.sym("x", self.nx)  # Estados
         self.u = MX.sym("u", self.nu)  # Exogena
         self.eq_estado = None
-        self.yss = None
+
         self.y = None
         self.sol = None
         self.estacionario = None

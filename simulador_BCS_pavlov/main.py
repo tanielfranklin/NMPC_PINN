@@ -77,24 +77,25 @@ Ysp = yss
 HLim = np.vstack([ymax[1], ymin[1]])
 PINLim = np.vstack([ymax[0], ymin[0]])
 # Simulation Loop -------------------------------- ------------------------------
-tsim = 70    # seconds
-nsim = int(tsim/Ts)   # number of steps
+tsim = 1.    # minutes
+nsim = int(60*tsim/Ts)   # number of steps
 uk = np.zeros((bcs.nu, int(nsim)))
 rows = []
 for k in range(nsim):
     print("Iteração:", k)
-    tsim = k*Ts
-    ymin[0, 0] = 8.8e6
+    tsim = k*Ts/60
+    
     # changes on set-points Pintake
-    if tsim == 50:
-        ymin[0, 0] = 6e6
-    elif tsim == 100:
-        ymin[0, 0] = 4.2e6
+    # if tsim == 0.6: #minutes
+    #     ymin[0, 0] = 6e6
+    # elif tsim == 0.8:
+    #     ymin[0, 0] = 4.2e6
 
-    if tsim == 20:
+    if tsim == 0.6:
+        ymin[0, 0] =  6e6;
+        utg = 70
+    elif tsim == 1.4:
         utg = 90
-    elif tsim == 40:
-        utg = 80
 
     ymax[0, 0] = ymin[0, 0]
     # elif k==200:
@@ -112,7 +113,7 @@ for k in range(nsim):
 
     # #ymin[0,0] = 4e6;
     # ## Limite Up e Downthrust
-    # hlim = bcs.envelope.Hlim(xpk[2]*3600)
+    hlim = bcs.envelope.Hlim(xpk[2]*3600)
     ymin[1, 0] = min(hlim)
     ymax[1, 0] = max(hlim)
 
@@ -122,12 +123,14 @@ for k in range(nsim):
         Du, ysp, sol = nmpc.nmpc_solver(P, ymin, ymax)
     except RuntimeError:         # Catch error - infeasibilities
         print("Erro no solver")
+        nmpc.opti.debug.show_infeasibilities()
+        raise RuntimeError
 
         #raise ImportError(e)
 
         # if sol.stats()['success']==1:
 
-        # nmpc.opti.debug.show_infeasibilities()
+        
 
     # W=sol.value_variables()
     if sol.stats()['success']:
@@ -171,7 +174,7 @@ sns.scatterplot(data=res, x='k', y='flag', ax=axes[1, 1])
 
 #sns.relplot(data=res, kind="line", x="k", y="t_calc", col="t_calc")
 # sns.lineplot(data=res, palette="tab10", linewidth=2.5)
-grafico = PlotResult()
+grafico = PlotResult(bcs.Ts)
 grafico.plot_resultado(Xk, uk)
 grafico.plot_y(Ysp, Yk, HLim, PINLim)
 bcs.envelope.size_env = (4, 4)

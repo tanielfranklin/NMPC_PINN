@@ -17,6 +17,9 @@ class NMPC(object):
         # self.NMPC_eq()
 
     def nmpc_solver(self, P, ymin, ymax):
+        yss=self.bcs.yss
+        uss=self.bcs.uss
+        
 
         opti = cs.Opti()
         nx = self.bcs.nx
@@ -36,9 +39,9 @@ class NMPC(object):
         # [x0 u0 du utg]
         x0 = P[:nx]  # Get X0 from P
         x0 = self.bcs.norm_x(x0)  # Normalize states x0
-        u0 = P[nx:nx+nu]
-        utg = P[-1]  # Get economic target from P
-        ysp0 = self.bcs.c_eq_medicao(x0)
+        u0 = P[nx:nx+nu]/uss
+        utg = P[-1]/uss[1]  # Get economic target from P
+        ysp0 = self.bcs.c_eq_medicao(x0)/yss
         # Get initial and updated control actions from P
         du0 = P[-nu*self.Hc-1:-1]
 
@@ -54,23 +57,23 @@ class NMPC(object):
         obj_1, obj_2 = 0, 0
         u = u0
         eps = 0.05
-        opti.subject_to(X[:, 0] == self.bcs.F(x0=x0, p=u0)['xf'])
+        opti.subject_to(X[:, 0] == self.bcs.F(x0=x0, p=u0*uss)['xf'])
         #print(self.bcs.F(x0=x0, p=u0)['xf'].T)
         for k in range(self.Hp):
             st = X[:, k]  # states
-            y = self.bcs.c_eq_medicao(st)  # system outputs
+            y = self.bcs.c_eq_medicao(st)/yss  # system outputs
             obj_1 += (y-ysp).T@Q@(y-ysp)  # set points terms
             # Track economic target (Maximum zc)
             obj_2 += ((u[1] - utg).T*Qu*(u[1] - utg))
             st_next = X[:, k+1]
-            st_pred=self.bcs.F(x0=st, p=u)['xf']
+            st_pred=self.bcs.F(x0=st, p=u*uss)['xf']
             #eq_cond=(st_next-st_pred).printme(0)
             eq_cond=(st_next-st_pred)
             opti.subject_to(eq_cond==0)
             u += future_du[k*nu:k*nu+2, :]  # update u
 
-            #opti.subject_to(y >= ymin)
-            #opti.subject_to(y <= ymax)
+            opti.subject_to(y >= ymin/yss)
+            opti.subject_to(y <= ymax/yss)
         # print(ymin.T+eps)
         # print(ymax.T+eps)
 
@@ -99,8 +102,10 @@ class NMPC(object):
                   "acceptable_obj_change_tol": 1e20,
                   "diverging_iterates_tol": 1e20}
         # print(opti.debug.show_infeasibilities())
-        s_opts = {"print_level": 0,
-                  "tol": 5#5e-1
+        s_opts = {"print_level": 5,"max_iter":50,
+                  #"nlp_scaling_method":None
+                  "tol": 5e-1,
+                  "constr_viol_tol": 1e-1,
          }
         opts = {}
         opti.solver("ipopt",opts, s_opts)
@@ -117,4 +122,4 @@ class NMPC(object):
         Du = np.vstack(sol.value(du))
         ysp_opt = np.vstack(sol.value(ysp)[:ny])
 
-        return Du, ysp_opt, sol
+        return Du, ysp_opt*yss, sol

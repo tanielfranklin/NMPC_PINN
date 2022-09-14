@@ -1,19 +1,26 @@
+from tictoc import tic, toc
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from BCS_casadi import BCS_model
 from plot_result import PlotResult
 from bcs_envelope import BcsEnvelope
 from nmpc_class import NMPC
+import seaborn as sns
+sns.set_theme()
+
 
 # steady-state conditions
 xss = np.vstack([8311024.82175957, 2990109.06207437,
                 0.00995042241351780, 50., 50.])
-nx = 5; nu = 2 ;ny = 2
+nx = 5
+nu = 2
+ny = 2
 
 uss = np.vstack([50., 50.])
 yss = np.vstack([6000142.88550200, 592.126490003812])
 # Controller parameters
-Hp = 10  # prediction horizon 
+Hp = 10  # prediction horizon
 Hc = 2  # control horizon
 Ts = 2  # sampling time
 # --------------------------------------------------------------------------
@@ -48,7 +55,7 @@ print("Initial control")
 print("f, zc")
 
 
-utg = 90   # target na choke
+utg = 60   # target na choke
 pm = 2e6   # pressão da manifold
 # ymax[0,0] = yss[0]; # Pressao de intake
 # Regiao de operação
@@ -59,10 +66,6 @@ ymax = np.vstack([xss[0], max(hlim)])  # Pressao de intake e  Uptrhust
 # ymax(2,1) = max(hlim); # Uptrhust
 xpk = xss
 ysp = yss
-# Simulation Loop -------------------------------- ------------------------------
-tsim = 200    # seconds
-nsim = int(tsim/Ts)   # number of steps
-uk = np.zeros((bcs.nu, int(nsim)))
 Vruido = ((0.01/3)*np.diag(yss[:, 0]))**2
 Du = np.zeros((nmpc.Hc*bcs.nu, 1))
 # # Parameters: initial states, du,utg, u0,ysp
@@ -71,17 +74,27 @@ P = np.vstack([x0, uk_1, Du, utg])
 Yk = yss
 Xk = xss.reshape((xss.shape[0], 1))
 Ysp = yss
-YLim = np.vstack([ymax[1], ymin[1]])
+HLim = np.vstack([ymax[1], ymin[1]])
+PINLim = np.vstack([ymax[0], ymin[0]])
+# Simulation Loop -------------------------------- ------------------------------
+tsim = 70    # seconds
+nsim = int(tsim/Ts)   # number of steps
+uk = np.zeros((bcs.nu, int(nsim)))
+rows = []
 for k in range(nsim):
     print("Iteração:", k)
     tsim = k*Ts
-    ymin[0,0] = 8.8e6
+    ymin[0, 0] = 8.8e6
     # changes on set-points Pintake
-    if tsim==50:
-        ymin[0,0] = 6e6
-    elif tsim==100:
-        ymin[0,0] = 4.2e6
+    if tsim == 50:
+        ymin[0, 0] = 6e6
+    elif tsim == 100:
+        ymin[0, 0] = 4.2e6
 
+    if tsim == 20:
+        utg = 90
+    elif tsim == 40:
+        utg = 80
 
     ymax[0, 0] = ymin[0, 0]
     # elif k==200:
@@ -93,7 +106,6 @@ for k in range(nsim):
     #     #uk_1[0,0]=55
     # if k==int(50/Ts):
     #     utg=90
-   
 
     # #ymin(1,1) = yss(1);    # Pressao de intake
     # ymax[0,0] = ymin[0,0]; # Pressao de intake
@@ -104,26 +116,38 @@ for k in range(nsim):
     ymin[1, 0] = min(hlim)
     ymax[1, 0] = max(hlim)
 
-    # tic
-    
-    Du, ysp = nmpc.nmpc_solver(P, ymin, ymax)
+    tic()
+    #Du, ysp, sol= nmpc.nmpc_solver(P, ymin, ymax)
+    try:
+        Du, ysp, sol = nmpc.nmpc_solver(P, ymin, ymax)
+    except RuntimeError:         # Catch error - infeasibilities
+        print("Erro no solver")
+
+        #raise ImportError(e)
+
+        # if sol.stats()['success']==1:
+
+        # nmpc.opti.debug.show_infeasibilities()
+
+    # W=sol.value_variables()
+    if sol.stats()['success']:
+        flag = 0
+    else:
+        flag = 1
+
+    # print(sol.value_variables())
+
+    cost = sol.stats()["iterations"]["obj"][-1]
+    n_iter = sol.stats()["iter_count"]
+    rows.append([k, toc(), cost, n_iter, flag])
     uk[:, k:k+1] = uk_1 + Du[:nmpc.Hc, :]
     uk_1 += Du[:nmpc.Hc, :]  # optimal input at time step k
-    #update input vector with the states and Du
+    # update input vector with the states and Du
     P = np.vstack([x0, uk_1, Du, utg])
-    #P = np.vstack([x0, Du, utg, uk_1, Du, yss])
 
-    # J_k[k] = fval  # cost function
-
-    # iter[0,k] = report.iterations
-    # evalObj[1,k] = report.funcCount
-    # flags[1,k] = flag
-    # DuYsp0 = DuYsp # Estimativa inicial do otmizador
-    # print(uk)
     # Plant
-
     xpk = bcs.integrator_ode(x0, uk_1)
-    #print(xpk)
+    # print(xpk)
     #  Nominal Model
     x0 = xpk
     ypk = bcs.eq_medicao(x0)
@@ -132,21 +156,24 @@ for k in range(nsim):
     ypk = ypk
     Yk = np.concatenate((Yk, ypk), axis=1)
     Ysp = np.concatenate((Ysp, ysp), axis=1)
-    YLim = np.concatenate((YLim, np.vstack([ymax[1], ymin[1]])), axis=1)
+    HLim = np.concatenate((HLim, np.vstack([ymax[1], ymin[1]])), axis=1)
+    PINLim = np.concatenate((PINLim, np.vstack([ymax[0], ymin[0]])), axis=1)
     Xk = np.concatenate((Xk, x0.reshape((x0.shape[0], 1))), axis=1)
 
+res = pd.DataFrame(rows, columns=['k', 't_calc', 'cost', 'n_iter', 'flag'])
+# define plotting region (2 rows, 2 columns)
+fig_res, axes = plt.subplots(2, 2)
+sns.scatterplot(data=res, x='k', y='t_calc', ax=axes[0, 0])
+sns.scatterplot(data=res, x='k', y='cost', ax=axes[0, 1])
+sns.scatterplot(data=res, x='k', y='n_iter', ax=axes[1, 0])
+sns.scatterplot(data=res, x='k', y='flag', ax=axes[1, 1])
 
+
+#sns.relplot(data=res, kind="line", x="k", y="t_calc", col="t_calc")
+# sns.lineplot(data=res, palette="tab10", linewidth=2.5)
 grafico = PlotResult()
 grafico.plot_resultado(Xk, uk)
-grafico.plot_y(Ysp, Yk, YLim)
+grafico.plot_y(Ysp, Yk, HLim, PINLim)
 bcs.envelope.size_env = (4, 4)
 bcs.envelope.grafico_envelope(Xk, Yk)
 plt.show()
-
-
-
-
-
-
-
-

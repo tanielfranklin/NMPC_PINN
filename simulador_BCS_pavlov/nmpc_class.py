@@ -1,6 +1,7 @@
 from BCS_casadi import BCS_model
 import casadi as cs
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class NMPC(object):
@@ -52,7 +53,9 @@ class NMPC(object):
         # Initialize objective functions
         obj_1, obj_2 = 0, 0
         u = u0
+        eps = 0.05
         opti.subject_to(X[:, 0] == self.bcs.F(x0=x0, p=u0)['xf'])
+        #print(self.bcs.F(x0=x0, p=u0)['xf'].T)
         for k in range(self.Hp):
             st = X[:, k]  # states
             y = self.bcs.c_eq_medicao(st)  # system outputs
@@ -60,12 +63,16 @@ class NMPC(object):
             # Track economic target (Maximum zc)
             obj_2 += ((u[1] - utg).T*Qu*(u[1] - utg))
             st_next = X[:, k+1]
-
-            opti.subject_to(st_next == self.bcs.F(x0=st, p=u)['xf'])
+            st_pred=self.bcs.F(x0=st, p=u)['xf']
+            #eq_cond=(st_next-st_pred).printme(0)
+            eq_cond=(st_next-st_pred)
+            opti.subject_to(eq_cond==0)
             u += future_du[k*nu:k*nu+2, :]  # update u
 
-            opti.subject_to(y >= ymin)
-            opti.subject_to(y <= ymax)
+            #opti.subject_to(y >= ymin)
+            #opti.subject_to(y <= ymax)
+        # print(ymin.T+eps)
+        # print(ymax.T+eps)
 
         obj = obj_1 + obj_2+(du.T@R@du)  # complete objective terms
 
@@ -78,9 +85,36 @@ class NMPC(object):
         opti.minimize(obj)
         # opts = {'ipopt.print_level': 0, 'print_time': 0, 'ipopt.sb': 'yes'}
         opts = {'ipopt.print_level': 3}
-        opts ={}
-        opti.solver("ipopt", opts)
+        p_opts = {"expand": True, "print_time": False}
+        s_opts = {#"max_cpu_time": 0.1,
+                  "print_level": 0,
+                  "tol": 5e-1,
+                #   "dual_inf_tol": 5.0,
+                  "constr_viol_tol": 1e-1,
+                #   "compl_inf_tol": 1e-1,
+                #   "acceptable_tol": 1e-2,
+                #   "acceptable_constr_viol_tol": 0.01,
+                #   "acceptable_dual_inf_tol": 1e10,
+                  "acceptable_compl_inf_tol": 0.01,
+                  "acceptable_obj_change_tol": 1e20,
+                  "diverging_iterates_tol": 1e20}
+        # print(opti.debug.show_infeasibilities())
+        s_opts = {"print_level": 0,
+                  "tol": 5#5e-1
+         }
+        opts = {}
+        opti.solver("ipopt",opts, s_opts)
+        #opti.solver('sqpmethod',{'qpsol':'osqp'})
+        self.opti=opti
+        # plt.figure(1)
+        # opti.callback(lambda i: plt.plot(opti.debug.value(x0[0])))
+        # plt.show()
         sol = opti.solve()
+        # print(self.opti.debug.value(st_next-st_pred))
+        # print(self.opti.debug.value(st_next))
+        
+        
         Du = np.vstack(sol.value(du))
         ysp_opt = np.vstack(sol.value(ysp)[:ny])
-        return Du, ysp_opt
+
+        return Du, ysp_opt, sol

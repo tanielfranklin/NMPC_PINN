@@ -10,6 +10,8 @@ import seaborn as sns
 sns.set_theme()
 
 
+
+
 # steady-state conditions
 xss = np.vstack([8311024.82175957, 2990109.06207437,
                 0.00995042241351780, 50., 50.])
@@ -19,6 +21,9 @@ ny = 2
 
 uss = np.vstack([50., 50.])
 yss = np.vstack([6000142.88550200, 592.126490003812])
+#output scale factor
+
+
 # Controller parameters
 Hp = 10  # prediction horizon
 Hc = 2  # control horizon
@@ -42,6 +47,8 @@ print("Instancia BCS")
 bcs_init = [nu, nx, ny, Ts, umin, umax, dumax]
 nmpc = NMPC(Hp, Hc, q, r, qu, bcs_init)
 bcs = nmpc.bcs
+def shift_du(Du):
+    return np.vstack([Du[bcs.nu:],Du[-bcs.nu:]])
 
 # --------------------------------------------------------------------------
 # Initial condition (preferred steady-state)
@@ -85,7 +92,7 @@ Ysp = yss
 HLim = np.vstack([ymax[1], ymin[1]])
 PINLim = np.vstack([ymax[0], ymin[0]])
 # Simulation Loop -------------------------------- ------------------------------
-tsim = 1.    # minutes
+tsim = 2.    # minutes
 nsim = int(60*tsim/Ts)   # number of steps
 uk = np.zeros((bcs.nu, int(nsim)))
 rows = []
@@ -100,8 +107,8 @@ for k in range(nsim):
     #     ymin[0, 0] = 4.2e6
 
     if tsim == 0.4:
-        ymin[0, 0] =  6e6;
-        utg = 70
+        ymin[0, 0] =  5.7e6;
+        #utg = 70
     elif tsim == 1.4:
         utg = 90
 

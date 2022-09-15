@@ -49,6 +49,7 @@ class NMPC(object):
         opti.set_initial(ysp, ysp0)
         opti.set_initial(du, du0)
         opti.set_initial(X, cs.repmat(x0, 1, self.Hp+1))  # fill X with x0
+        
 
         # Define dynamic constraints  dependent of predictions steps
         future_du = cs.vertcat(du, np.zeros((nu*(self.Hp-self.Hc), 1)))
@@ -56,6 +57,7 @@ class NMPC(object):
         # Initialize objective functions
         obj_1, obj_2 = 0, 0
         u = u0
+        print("controle: ",u)
         eps = 0.05
         opti.subject_to(X[:, 0] == self.bcs.F(x0=x0, p=u0*uss)['xf'])
         #print(self.bcs.F(x0=x0, p=u0)['xf'].T)
@@ -102,7 +104,7 @@ class NMPC(object):
                   "acceptable_obj_change_tol": 1e20,
                   "diverging_iterates_tol": 1e20}
         # print(opti.debug.show_infeasibilities())
-        s_opts = {"print_level": 5,"max_iter":50,
+        s_opts = {"print_level": 5,"max_iter":80,
                   #"nlp_scaling_method":None
                   "tol": 5e-1,
                   "constr_viol_tol": 1e-1,

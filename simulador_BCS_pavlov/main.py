@@ -54,6 +54,14 @@ x0 = np.vstack([8311024.82175957, 2990109.06207437,
 print("Initial control")
 print("f, zc")
 
+try:
+    print(bcs.desnorm_x(bcs.F(x0=bcs.norm_x(x0), p=uss)['xf']))
+except Exception as e:
+  print("An exception was raised here:")
+  print(e)
+
+  
+
 
 utg = 60   # target na choke
 pm = 2e6   # pressão da manifold
@@ -91,7 +99,7 @@ for k in range(nsim):
     # elif tsim == 0.8:
     #     ymin[0, 0] = 4.2e6
 
-    if tsim == 0.6:
+    if tsim == 0.4:
         ymin[0, 0] =  6e6;
         utg = 70
     elif tsim == 1.4:
@@ -122,8 +130,8 @@ for k in range(nsim):
     try:
         Du, ysp, sol = nmpc.nmpc_solver(P, ymin, ymax)
     except RuntimeError:         # Catch error - infeasibilities
-        print("Erro no solver")
-        nmpc.opti.debug.show_infeasibilities()
+        print("Erro no solver - Normalizar todos os estados inclusive dz/dt e df/dt")
+        #nmpc.opti.debug.show_infeasibilities()
         raise RuntimeError
 
         #raise ImportError(e)

@@ -32,7 +32,7 @@ y = sin(x)
 z = sqrt(y)
 
 f = Function("f", [x], [z])
-xi=5
+xi = 5
 print(f"Seno de {xi}", sin(xi))
 print("raiz do seno de 5")
 z0 = f(xi)
@@ -42,39 +42,45 @@ print(z0)
 #! For some mysterious reason we get NaN here
 
 #! Next, we add an assertion:
-y = y.attachAssert(y>0, "bummer") # Add assertion here
+y = y.attachAssert(y > 0, "bummer")  # Add assertion here
 z = sqrt(y)
 
-f = Function("f", [x],[z])
+f = Function("f", [x], [z])
 
-try:
-  z0 = f(5)
-except Exception as e:
-  print("An exception was raised here:")
-  print(e)
+# try:
+#     z0 = f(5)
+# except Exception as e:
+#     print("An exception was raised here:")
+#     print(e)
 
 
 #! You can combine this with Callback to do powerful assertions
 class Dummy(Callback):
-  def __init__(self, name, opts={}):
-    Callback.__init__(self)
-    self.construct(name, opts)
-  def get_n_in(self): return 1
-  def get_n_out(self): return 1
-  def eval(self, arg):
-    import numpy
-    x = arg[0]
-    m = max(numpy.real(numpy.linalg.eig(blockcat([[x,-1],[-1,2]]))[0]))
-    print("m=",m)
-    return [int(m>2)]
+    def __init__(self, name, opts={}):
+        Callback.__init__(self)
+        self.construct(name, opts)
+
+    def get_n_in(self): return 1
+    def get_n_out(self): return 1
+
+    def eval(self, arg):
+        import numpy
+        x = arg[0]
+        m = max(numpy.real(numpy.linalg.eig(blockcat([[x, -1], [-1, 2]]))[0]))
+        print("m=", m)
+        return [int(m > 2)]
+
 
 foo = Dummy("foo")
 
 y = sin(x)
 
-y = y.attachAssert(foo(y), "you are in trouble") # Add assertion here
+y = y.attachAssert(foo(y), "you are in trouble")  # Add assertion here
 z = sqrt(y)
 
-f = Function("f", [x],[z])
-
-z0 = f(5)
+f = Function("f", [x], [z])
+try:
+    z0 = f(5)
+except Exception as e:
+    print("An exception was raised here:")
+    print(e)

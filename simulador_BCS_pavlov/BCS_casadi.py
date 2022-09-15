@@ -71,8 +71,9 @@ class BCS_model(object):
         pbh = x[0]
         pwh = x[1]
         q = x[2]
-        fq = x[3]
-        zc = x[4]
+        q=q.attachAssert(q>0, "Negative flow detected!")
+        fq = x[3]*self.par.xc[3]
+        zc = x[4]*self.par.xc[3]
         # Entradas
         fqref = u[0]
         zcref = u[1]

@@ -34,6 +34,7 @@ class BCS_model(object):
                 0.00995042241351780, 50, 50])
         self.uss = np.vstack([50, 50])
         self.yss = np.vstack([6000142.88550200, 592.126490003812])
+        self.y_sc=np.vstack([12e6,1300]) # output scale factor
         self.BCS_equation()
         self.dudt_max = MX.sym("dudt_max", 2)  # Exogena
 

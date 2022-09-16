@@ -143,8 +143,32 @@ class BcsEnvelope(object):
                     arrowprops=dict(facecolor='red', shrink=0.01))
         return fig,ax
     def grafico_envelope2(self):
+        fig=plt.figure(figsize=self.size_env)
+        ax=fig.add_subplot(111)
+        ax.plot(self.q_35hz,self.H_35hz_env(self.q_35hz),':b'); 
+        ax.plot(self.q_65hz,self.H_65hz_env(self.q_65hz),':b');
+        ax.plot(self.q_ut,self.H_ut_env(self.q_ut),':r');
+        ax.plot(self.q_dt,self.H_dt_env(self.q_dt),':r');
+        ax.set_xlabel(r'$q_p (m^3/h)$')
+        ax.set_ylabel('H (m)')
+        # plt.plot(Xk[2,0:].T*3600,Yk[1,0:].T,'--k')
+        # plt.plot(Xk[2,0]*3600,Yk[1,0],'o')#,'MarkerFaceColor',[0,1,0],'MarkerEdgeColor',[0,0,0])
+        # plt.plot(Xk[2,-1]*3600,Yk[1,-1],'o')#,'MarkerFaceColor',[1,0,0],'MarkerEdgeColor',[0,0,0])
+        # plt.annotate('t=0',
+        #             xy=(float(Xk[2,0]*3600),float(Yk[1,0])),
+        #             xytext=(float(Xk[2,0]*3600)-5,float(Yk[1,0])+10),
+        #             arrowprops=dict(facecolor='green', shrink=0.01))
+
+        # plt.annotate(f't={Xk.shape[1]}',
+        #             xy=(float(Xk[2,-1]*3600),float(Yk[1,-1])),
+        #             xytext=(float(Xk[2,-1]*3600)-7,float(Yk[1,-1])+10),
+        #             arrowprops=dict(facecolor='red', shrink=0.01))
+        return fig,ax
+    
+    def grafico_envelope3(self):
         df = pd.DataFrame(dict(q35=self.q_35hz,
                 H35=self.H_35hz_env(self.q_35hz)))
         g = sns.relplot(x="q35", y="H35", kind="line", data=df)
+        #g = sns.relplot(x="q35", y="H65", kind="line", data=df)
         g.figure.autofmt_xdate()
         return g

@@ -9,9 +9,6 @@ from nmpc_class import NMPC
 import seaborn as sns
 sns.set_theme()
 
-
-
-
 # steady-state conditions
 xss = np.vstack([8311024.82175957, 2990109.06207437,
                 0.00995042241351780, 50., 50.])
@@ -21,7 +18,7 @@ ny = 2
 
 uss = np.vstack([50., 50.])
 yss = np.vstack([6000142.88550200, 592.126490003812])
-#output scale factor
+# output scale factor
 
 
 # Controller parameters
@@ -40,15 +37,17 @@ dumax = Ts*np.vstack([0.5, 0.5])
 q = np.hstack([100, 1]) / (yss**2)  # weights on controlled variables
 q = np.hstack([1e6, 1e8]) / (yss**2)  # weights on controlled variables
 r = np.array([100, 1]) / (uss.T**2)  # weights on control actions
-
 qu = 1000 / (uss[1]**2)
 
 print("Instancia BCS")
 bcs_init = [nu, nx, ny, Ts, umin, umax, dumax]
 nmpc = NMPC(Hp, Hc, q, r, qu, bcs_init)
 bcs = nmpc.bcs
+
+
 def shift_du(Du):
-    return np.vstack([Du[bcs.nu:],Du[-bcs.nu:]])
+    return np.vstack([Du[bcs.nu:], Du[-bcs.nu:]])
+
 
 # --------------------------------------------------------------------------
 # Initial condition (preferred steady-state)
@@ -64,10 +63,8 @@ print("f, zc")
 try:
     print(bcs.desnorm_x(bcs.F(x0=bcs.norm_x(x0), p=uss)['xf']))
 except Exception as e:
-  print("An exception was raised here:")
-  print(e)
-
-  
+    print("An exception was raised here:")
+    print(e)
 
 
 utg = 60   # target na choke
@@ -92,14 +89,22 @@ Ysp = yss
 HLim = np.vstack([ymax[1], ymin[1]])
 PINLim = np.vstack([ymax[0], ymin[0]])
 # Simulation Loop -------------------------------- ------------------------------
-tsim = 2.    # minutes
+tsim = 6.    # minutes
 nsim = int(60*tsim/Ts)   # number of steps
 uk = np.zeros((bcs.nu, int(nsim)))
 rows = []
+
+# Du, ysp, sol = nmpc.nmpc_solver(P, ysp, [ymin, ymax])
+
+# print(Du)
+# print(ysp)
+# print(ysp)
+
+
 for k in range(nsim):
     print("Iteração:", k)
     tsim = k*Ts/60
-    
+
     # changes on set-points Pintake
     # if tsim == 0.6: #minutes
     #     ymin[0, 0] = 6e6
@@ -107,12 +112,12 @@ for k in range(nsim):
     #     ymin[0, 0] = 4.2e6
 
     if tsim == 0.4:
-        ymin[0, 0] =  5.7e6;
-        #utg = 70
+        ymin[0, 0] = 5.7e6
+        utg = 70
     elif tsim == 1.4:
         utg = 90
 
-    ymax[0, 0] = ymin[0, 0]
+    ymax[0, 0] = ymin[0, 0]+1e5
     # elif k==200:
     #    ymin[0,0] = 4.2e6
     # else:
@@ -133,20 +138,13 @@ for k in range(nsim):
     ymax[1, 0] = max(hlim)
 
     tic()
-    #Du, ysp, sol= nmpc.nmpc_solver(P, ymin, ymax)
-    try:
-        Du, ysp, sol = nmpc.nmpc_solver(P, ymin, ymax)
-    except RuntimeError:         # Catch error - infeasibilities
-        print("Erro no solver - Normalizar todos os estados inclusive dz/dt e df/dt")
-        #nmpc.opti.debug.show_infeasibilities()
-        raise RuntimeError
 
-        #raise ImportError(e)
 
-        # if sol.stats()['success']==1:
+    Du, ysp, sol = nmpc.nmpc_solver(P, ysp, [ymin, ymax])
 
-        
 
+
+    # if sol.stats()['success']==1:
     # W=sol.value_variables()
     if sol.stats()['success']:
         flag = 0
@@ -160,12 +158,13 @@ for k in range(nsim):
     rows.append([k, toc(), cost, n_iter, flag])
     uk[:, k:k+1] = uk_1 + Du[:nmpc.Hc, :]
     uk_1 += Du[:nmpc.Hc, :]  # optimal input at time step k
+    #Du = shift_du(Du)
     # update input vector with the states and Du
     P = np.vstack([x0, uk_1, Du, utg])
 
     # Plant
     xpk = bcs.integrator_ode(x0, uk_1)
-    # print(xpk)
+
     #  Nominal Model
     x0 = xpk
     ypk = bcs.eq_medicao(x0)

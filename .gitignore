@@ -58,3 +58,8 @@ solverNMPC.prj
 solverNMPC.prj
 simulador_BCS_pavlov/__pycache__/BCS_casadi.cpython-39.pyc
 simulador_BCS_pavlov/__pycache__/nmpc_class.cpython-39.pyc
+Matlab codes/MPC_incremental.rar
+Matlab codes/MPC incremental/FKalman.m
+Matlab codes/MPC incremental/immpc.m
+Matlab codes/MPC incremental/issmpc.m
+Matlab codes/MPC incremental/sim_issmpc.m

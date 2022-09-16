@@ -31,9 +31,17 @@ class NMPC(object):
         R = np.diag(np.tile(self.r, (1, self.Hc))[0, :])
 
         # define decision variables
-        du = opti.variable(nu*self.Hc)
-        ysp = opti.variable(ny, 1)
-        X = opti.variable(nx, self.Hp+1)
+        du = cs.MX.sym('du',nu*self.Hc)
+        ysp = cs.MX.sym('du',(ny, 1))
+        X = cs.MX.sym('du',(nx, self.Hp+1))
+        
+        # List of variables
+        w=[]
+        w+=[du]
+        w+=[ysp]
+        w+=[cs.reshape(X,(self.Hp+1)*nx,1)]
+        print(w[2])
+        print(w[2].shape)
 
         # Parameters vector
         # [x0 u0 du utg]
@@ -45,11 +53,14 @@ class NMPC(object):
         # Get initial and updated control actions from P
         du0 = P[-nu*self.Hc-1:-1]
 
-        # Initialize decision variables
-        opti.set_initial(ysp, ysp0)
-        opti.set_initial(du, du0)
-        opti.set_initial(X, cs.repmat(x0, 1, self.Hp+1))  # fill X with x0
 
+        # Initialize decision variables
+        init=[]
+        init+=[ysp0]
+        init+=[du0]
+        X0=cs.reshape(cs.repmat(x0, 1, self.Hp+1),(self.Hp+1)*nx,1)
+        init+=[X0]
+        
         # Define dynamic constraints  dependent of predictions steps
         future_du = cs.vertcat(du, np.zeros((nu*(self.Hp-self.Hc), 1)))
 
@@ -68,9 +79,13 @@ class NMPC(object):
         print("Estados preditos: ", self.bcs.desnorm_x(st_pred).T)
         print("Limites Saída: ", (ymin*self.bcs.y_sc).T)
         print("Limites Saída: ", (ymax*self.bcs.y_sc).T)
+        
+        g=[]
+        g+=[X[:, 0]-st_pred] # initial conditions
+        lbg=[]
+        ubg=[]
+        
 
-        opti.subject_to(X[:, 0] == st_pred)
-        #print(self.bcs.F(x0=x0, p=u0)['xf'].T)
         for k in range(self.Hp):
             st = X[:, k]  # states
             y = self.bcs.c_eq_medicao(st)/self.bcs.y_sc  # system outputs
@@ -85,25 +100,32 @@ class NMPC(object):
                 print(e)
                 raise
             eq_cond = (st_next-st_pred)  # .printme(0)
-            opti.subject_to(eq_cond == 0)
+            g+=[eq_cond]
             u += future_du[k*nu:k*nu+2, :]  # update u
-            const_y1 = (y - ymin)  # .printme(0)
+            const_y1 = (ymin-y)  # .printme(0)
             const_y2 = (y - ymax)  # .printme(1)
 
-            # opti.subject_to(const_y1 >= 0)
-            # opti.subject_to(const_y2 <= 0)
-        # print(ymin.T+eps)
-        # print(ymax.T+eps)
+            # g+=[const_y1] #<= 0)
+            # g+=[const_y2] #<= 0)
+        
+        lbg+=[0 for i in range((self.Hp+1)*nx)] #lower bound of equalities       
+        ubg+=[0 for i in range((self.Hp+1)*nx)] #uper bound of equalities
+        
+        # lbg+=[0 for i in range(self.Hp*ny)] #lower bound ymin
+        # lbg+=[0 for i in range(self.Hp*ny)] #lower bound ymax
+        # ubg+=[np.inf for i in range(self.Hp*ny)] #uper bound ymin
+        # ubg+=[np.inf for i in range(self.Hp*ny)] #uper bound ymax
+        
 
-        obj = obj_1 + obj_2  +(du.T@R@du)  # complete objective terms
+        obj = obj_1 + obj_2 + (du.T@R@du)  # complete objective terms
 
         # # # # Define contraints related to maximum and minimum du rate
-        opti.subject_to(np.tile(self.bcs.dumax, (nu, 1))
-                        >= du)  # Maximum control rate
-        opti.subject_to(-np.tile(self.bcs.dumax, (nu, 1))
-                        <= du)  # Minimun control rate
+        # opti.subject_to(np.tile(self.bcs.dumax, (nu, 1))
+        #                 >= du)  # Maximum control rate
+        # opti.subject_to(-np.tile(self.bcs.dumax, (nu, 1))
+        #                 <= du)  # Minimun control rate
 
-        opti.minimize(obj)
+        
         # opts = {'ipopt.print_level': 0, 'print_time': 0, 'ipopt.sb': 'yes'}
         opts = {'ipopt.print_level': 3}
         p_opts = {"expand": True, "print_time": False}
@@ -120,49 +142,55 @@ class NMPC(object):
             "acceptable_obj_change_tol": 1e20,
             "diverging_iterates_tol": 1e20}
         # print(opti.debug.show_infeasibilities())
-        s_opts = {"print_level": 5, "max_iter": 50,
-                  # "nlp_scaling_method":None,
-                  "tol": 1e-1,
-                  "constr_viol_tol": 5e-1,
-                  }
         opts = {}
-        opti.solver("ipopt", opts, s_opts)
-        # opti.solver('sqpmethod',{'qpsol':'osqp'})
-        self.opti = opti
-        # plt.figure(1)
-        # opti.callback(lambda i: plt.plot(opti.debug.value(x0[0])))
-        # plt.show()
+        opts['ipopt.tol'] = 1e-1
+        opts['ipopt.max_iter'] = 50
+        opts["ipopt.constr_viol_tol"]= 1e-1
+        
+        # Allocate an NLP solver
+        
+        g_lim=cs.vertcat(*g)
+        nlp = {'x':cs.vertcat(*w), 'f':obj, 'g':g_lim}
+        # print(nlp)
+        solver = cs.nlpsol('solver', 'ipopt', nlp,opts)
+        # print(solver)
+        x0_init=cs.vertcat(*init)
+
+
+        
         try:
-            sol = opti.solve()
+            sol = solver( # Lower variable bound
+             #ubx = ubw,  # Upper variable bound
+             lbg = 0,  # Lower constraint bound
+             ubg = cs.vertcat(*ubg),  # Upper constraint bound
+             x0  = x0_init) # Initial guess
         except RuntimeError:
             print("equalities constraints")
-            print(self.opti.debug.value(st_next-st_pred))
-            print("States variables optimizer")
-            print(self.opti.debug.value(self.bcs.desnorm_x(st_next)))
-            print("States variables model")
-            print(self.opti.debug.value(self.bcs.desnorm_x(st_pred)))
-            print("output variables")
-            print(self.opti.debug.value(y*self.bcs.y_sc))
+            #print(self.opti.debug.value(st_next-st_pred))
+            # print("States variables optimizer")
+            # print(self.opti.debug.value(self.bcs.desnorm_x(st_next)))
+            # print("States variables model")
+            # print(self.opti.debug.value(self.bcs.desnorm_x(st_pred)))
+            # print("output variables")
+            # print(self.opti.debug.value(y*self.bcs.y_sc))
             print("output variables limits")
             print((ymin*self.bcs.y_sc).T)
             print((ymax*self.bcs.y_sc).T)
             print("decision variables du")
-            print(self.opti.debug.value(du))
+            #print(self.opti.debug.value(du))
             print("decision variables ysp")
-            print(self.opti.debug.value((ysp*self.bcs.y_sc).T))
+            #print(self.opti.debug.value((ysp*self.bcs.y_sc).T))
             print("decision variables now")
-            print(sol.value(X))
-            print(sol.value(ysp))
-            print(sol.value(du))
-            print("decision on initial")
-            print(sol.value(X, opti.initial()))
-            print(sol.value(ysp, opti.initial()))
+            # print(sol.value(X))
+            # print(sol.value(ysp))
+            # print(sol.value(du))
+            # print("decision on initial")
+            # print(sol.value(X, opti.initial()))
+            # print(sol.value(ysp, opti.initial()))
             # nmpc.opti.debug.show_infeasibilities()
             raise
-
-        Du = np.vstack(sol.value(du))
-        ysp_opt = np.vstack(sol.value(ysp)[:ny])
+        w_opt = sol['x'].full().flatten()
+        Du = np.vstack(w_opt[:self.bcs.nu*self.Hc])
+        ysp_opt = np.vstack(w_opt[self.bcs.nu*self.Hc:self.bcs.nu*self.Hc+ny])
 
         return Du, ysp_opt*self.bcs.y_sc, sol
-    
-    

@@ -1,5 +1,5 @@
 PINN VFM <br>
-<!-- If this system help you, you are encouraged to cite the following paper:<br>
+!-- If this system help you, you are encouraged to cite the following paper:<br>
 
     ---
     ---
@@ -9,7 +9,7 @@ PINN VFM <br>
       year      = {2022},
       volume={5},
       journal = {Digital Chemical Engineering}
-    } -->
+    } --
 There are some datasets available. We build dataset01 (using main_build_dataset.py) for training purposes and dataset_opera (using main_build_dataset.py) to verify the model generability. <br>
 
 The procedure to achieve a good model is: <br>

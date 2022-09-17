@@ -15,11 +15,11 @@ There are some datasets available. We build dataset01 (using main_build_dataset.
 The procedure to achieve a good model is: <br>
 a) start the training using model_adam_200 (main_train_adam.py)  <br>
 b) complete the training changing to main_train_lbfgs resulting in model_adam_lbfgs model <br>
-c) pay attention to the loss terms evolution to set a better set of weights <br>
+c) pay attention to the loss terms evolution to define a better set of weights <br>
 
 The notebook main.ipynb demonstrates the model capability during free prediction <br>
-<br>
-Routines to train with Adam and L-BFGS optimizers
-<br> Routines to restores model trained previously
 
-Feel free to contribute with the software improvements.
+Routines to train with Adam and L-BFGS optimizers <br>
+Routines to restore models trained previously <br>
+
+Feel free to contribute with software improvements.

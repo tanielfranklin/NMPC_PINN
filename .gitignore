@@ -171,3 +171,5 @@ Dados simulação-/Figures_cenario700s/Pin_cen2.fig
 Dados simulação-/Figures_cenario700s/tictoc_cen2.fig
 example pack/python/callback_example.py
 example pack/python/ipopt_example.py
+example pack/python/callback_example.py
+example pack/python/ipopt_example.py

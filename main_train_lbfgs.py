@@ -76,7 +76,7 @@ training_report.gen_plot_loss_res()
 plt.show()
 # ------------------------ Saving files --------------------------------
 # Uncomment the lines below to save the model
-folder_string = "model_adam_lbfgs"
+folder_string = "pinn_models/model_adam_lbfgs"
 objects2save = {"Loss": loss_history,
                 "trainstate": trainstate, "vartrain": var_history}
 save_model_files(folder_string, objects2save, pinn)

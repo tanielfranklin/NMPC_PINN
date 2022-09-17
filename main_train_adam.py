@@ -64,7 +64,7 @@ plt.show()  # Uncomment to see the graphics
 
 
 # Uncomment the lines below to save the model
-folder_string = "model_adam_200"
+folder_string = "pinn_models/model_adam_200"
 objects2save = {"Loss": loss_history,
                 "trainstate": trainstate, "vartrain": var_history}
 save_model_files(folder_string, objects2save, pinn)

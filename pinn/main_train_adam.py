@@ -11,6 +11,7 @@ from data.TrainingReport import TrainingReport
 
 #time = np.linspace(0, maxtime, 200) # Regular points inside the domain
 
+
 with open("dataset01.pk", 'rb') as open_file:
         ds = pickle.load(open_file)
 

@@ -43,7 +43,7 @@ class Logger(object):
     print(f'==============Weights===============')
     print(f'[ wbc ,  w1 ,  w2 ,  w3 ]')
     print(f'{w}')
-    print('                                                    |==== Weigthed Residues ===|ODE parameters|')
+    print('                                                    |==== Weight Residues ===|ODE parameters|')
     print('==============================================================================================================================')
     print('epoch | elap|  Total  | Loss BC |Loss ODE |  Test   | w1r1   | w2r2   |  w3r3  | rho |   PI   |')
     print('==============================================================================================================================')

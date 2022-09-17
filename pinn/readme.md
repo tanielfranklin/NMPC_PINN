@@ -19,4 +19,7 @@ c) pay attention to the loss terms evolution to set a better set of weights <br>
 
 The notebook main.ipynb demonstrates the model capability during free prediction <br>
 <br>
+Routines to train with Adam and L-BFGS optimizers
+<br> Routines to restores model trained previously
+
 Feel free to contribute with the software improvements.

@@ -51,9 +51,9 @@ pinn = pinn_vfm(Nc, tf_optimizer, logger,
                 n_steps_in=ds.n_steps_in,
                 n_steps_out=ds.n_steps_out,
                 parameters=ds.parameters)
-local="model_adam_200/"
+local = "model_adam_200/"
 pinn.u_model.load_weights(local+'model.h5')
-pinn_restored=restore_pinn_model(local)
+pinn_restored = restore_pinn_model(local)
 # #######################################
 # pinn.lamb_l1 = tf.constant(1.0, dtype=tf.float32)  # x1 residue weight
 # pinn.lamb_l2 = tf.constant(1.0, dtype=tf.float32)  # x3 residue weight
@@ -61,20 +61,22 @@ pinn_restored=restore_pinn_model(local)
 # nt_config.maxIter = 200
 # loss_history, trainstate, var_history=pinn.fit_LBFGS(ds.lbfgs_dataset(), nt_config)
 # training_report = TrainingReport(pinn, [loss_history, trainstate, var_history], ds)
-#------------------------ Set new weights --------------------------------
-pinn.lamb_l1=tf.constant(2.0, dtype=tf.float32) #x3 residue weight
-pinn.lamb_l2=tf.constant(1.9, dtype=tf.float32) #x3 residue weight
-pinn.lamb_l3=tf.constant(0.01, dtype=tf.float32) #x3 residue weight
-#------------------------ Remaining epochs with LBFGS --------------------------------
-loss_history, trainstate, var_history=pinn.fit_LBFGS(ds.lbfgs_dataset(), nt_config)
-training_report = TrainingReport(pinn, [loss_history, trainstate, var_history], ds)
+# ------------------------ Set new weights --------------------------------
+pinn.lamb_l1 = tf.constant(2.0, dtype=tf.float32)  # x3 residue weight
+pinn.lamb_l2 = tf.constant(1.9, dtype=tf.float32)  # x3 residue weight
+pinn.lamb_l3 = tf.constant(0.01, dtype=tf.float32)  # x3 residue weight
+# ------------------------ Remaining epochs with LBFGS --------------------------------
+loss_history, trainstate, var_history = pinn.fit_LBFGS(
+    ds.lbfgs_dataset(), nt_config)
+training_report = TrainingReport(
+    pinn, [loss_history, trainstate, var_history], ds)
 training_report.gen_plot_result()
 training_report.gen_var_plot()
 training_report.gen_plot_loss_res()
 plt.show()
-#------------------------ Saving files --------------------------------
-#Uncomment the lines below to save the model
-folder_string="model_adam_lbfgs"
-objects2save={"Loss":loss_history,"trainstate":trainstate,"vartrain":var_history}
-save_model_files(folder_string,objects2save,pinn)
-
+# ------------------------ Saving files --------------------------------
+# Uncomment the lines below to save the model
+folder_string = "model_adam_lbfgs"
+objects2save = {"Loss": loss_history,
+                "trainstate": trainstate, "vartrain": var_history}
+save_model_files(folder_string, objects2save, pinn)

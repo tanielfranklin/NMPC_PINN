@@ -175,3 +175,36 @@ example pack/python/callback_example.py
 example pack/python/ipopt_example.py
 example pack/python/callback_example.py
 example pack/python/ipopt_example.py
+Matlab codes/bcs_model_plant.m
+Matlab codes/bcs_model.m
+Matlab codes/bcs_settings_hlim.m
+Matlab codes/EKF_Bruno_mex.mexw64
+Matlab codes/EKF_Bruno.m
+Matlab codes/EKF.m
+Matlab codes/eq_algebricas_bcs.m
+Matlab codes/eq_medicao.m
+Matlab codes/fob_NMPC.m
+Matlab codes/Open_loop_BCS_ode45.m
+Matlab codes/open_loop_sim.m
+Matlab codes/solverNMPC_mex.mexw64
+Matlab codes/solverNMPC.m
+Matlab codes/zoneNMPC_MEX.mat
+Matlab codes -/bcs_model_plant.m
+Matlab codes -/bcs_model.m
+Matlab codes -/bcs_settings_hlim.m
+Matlab codes -/EKF_Bruno_mex.mexw64
+Matlab codes -/EKF_Bruno.m
+Matlab codes -/EKF.m
+Matlab codes -/eq_algebricas_bcs.m
+Matlab codes -/eq_medicao.m
+Matlab codes -/fob_NMPC.m
+Matlab codes -/MPC_incremental.rar
+Matlab codes -/Open_loop_BCS_ode45.m
+Matlab codes -/open_loop_sim.m
+Matlab codes -/solverNMPC_mex.mexw64
+Matlab codes -/solverNMPC.m
+Matlab codes -/zoneNMPC_MEX.mat
+Matlab codes -/MPC incremental/FKalman.m
+Matlab codes -/MPC incremental/immpc.m
+Matlab codes -/MPC incremental/issmpc.m
+Matlab codes -/MPC incremental/sim_issmpc.m

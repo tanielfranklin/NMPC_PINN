@@ -5,8 +5,7 @@ import matplotlib.pyplot as plt
 from data.BCS_casadi import BCS_model
 from data.plot_result import PlotResult
 from data.bcs_envelope import BcsEnvelope
-#from data.nmpc_class import NMPC  #uncythonized class
-from data.nmpc_class_cy import NMPC #cythonized class. To change needs re compile 
+from data.nmpc_class import NMPC
 import seaborn as sns
 sns.set_theme()
 
@@ -68,7 +67,7 @@ except Exception as e:
     print(e)
 
 
-
+utg = 60   # target na choke
 pm = 2e6   # pressão da manifold
 # ymax[0,0] = yss[0]; # Pressao de intake
 # Regiao de operação
@@ -79,7 +78,6 @@ ymax = np.vstack([xss[0], max(hlim)])  # Pressao de intake e  Uptrhust
 # ymax(2,1) = max(hlim); # Uptrhust
 xpk = xss
 ysp = yss
-utg=50
 Vruido = ((0.01/3)*np.diag(yss[:, 0]))**2
 Du = np.zeros((nmpc.Hc*bcs.nu, 1))
 # # Parameters: initial states, du,utg, u0,ysp
@@ -95,14 +93,14 @@ tsim = 6.    # minutes
 nsim = int(60*tsim/Ts)   # number of steps
 uk = np.zeros((bcs.nu, int(nsim)))
 rows = []
-tic()
-Du, ysp, sol = nmpc.nmpc_solver(P, ysp, [ymin, ymax])
-print(toc())
-print(Du)
-print(ysp)
-print(ysp)
 
-exit()
+# Du, ysp, sol = nmpc.nmpc_solver(P, ysp, [ymin, ymax])
+
+# print(Du)
+# print(ysp)
+# print(ysp)
+
+
 for k in range(nsim):
     print("Iteração:", k)
     tsim = k*Ts/60
@@ -114,14 +112,12 @@ for k in range(nsim):
     #     ymin[0, 0] = 4.2e6
 
     if tsim == 0.4:
-        ysp =  np.vstack([60e5, 500.])
-       
+        ymin[0, 0] = 5.7e6
+        utg = 70
     elif tsim == 1.4:
-        ysp =  np.vstack([50e5, 500.])
-        
-    elif tsim == 4.:
-        ysp =  np.vstack([50e5, 700.])
+        utg = 90
 
+    ymax[0, 0] = ymin[0, 0]+1e5
     # elif k==200:
     #    ymin[0,0] = 4.2e6
     # else:

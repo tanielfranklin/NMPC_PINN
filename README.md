@@ -2,9 +2,9 @@
 
 Resources <br>
 Casadi-based simulator of an ESP oil lift system based in pavlov model <br>
-NMPC routines for setpoint tracking<br>
-NMPC routines for economic optimization<br>
-A Physics informed neural network model for system<br>
+NMPC routine for setpoint tracking<br>
+NMPC routines for economic optimization (Nok)<br>
+A Physics informed neural network model for ESP-lifted oil well system<br>
 
 PINN VFM <br>
  If this system help you, you are encouraged to cite the following paper:<br>

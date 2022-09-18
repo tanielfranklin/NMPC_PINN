@@ -51,7 +51,7 @@ pinn = pinn_vfm(Nc, tf_optimizer, logger,
                 n_steps_in=ds.n_steps_in,
                 n_steps_out=ds.n_steps_out,
                 parameters=ds.parameters)
-local = "model_adam_200/"
+local = "pinn_models/model_adam_200/"
 pinn.u_model.load_weights(local+'model.h5')
 pinn_restored = restore_pinn_model(local)
 # #######################################

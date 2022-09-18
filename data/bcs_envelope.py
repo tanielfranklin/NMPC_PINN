@@ -2,7 +2,7 @@
 import pandas as pd
 import seaborn as sns
 from shapely.geometry import LineString
-from param import *
+from data.param import *
 from matplotlib import pyplot as plt 
 
 def cumprod_reverse (A,n):

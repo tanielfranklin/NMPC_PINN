@@ -2,10 +2,10 @@ from data.tictoc import tic, toc
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from BCS_casadi import BCS_model
-from plot_result import PlotResult
-from bcs_envelope import BcsEnvelope
-from nmpc_class import NMPC
+from data.BCS_casadi import BCS_model
+from data.plot_result import PlotResult
+from data.bcs_envelope import BcsEnvelope
+from data.nmpc_class import NMPC
 import seaborn as sns
 sns.set_theme()
 

@@ -4,9 +4,9 @@ from scipy.integrate import solve_ivp
 from casadi import sqrt as csqrt
 import matplotlib.pyplot as plt
 import math
-from parameters import Parameters, Lim_c
-from param import *
-from bcs_envelope import BcsEnvelope
+from data.parameters import Parameters, Lim_c
+from data.param import *
+from data.bcs_envelope import BcsEnvelope
 
 
 class BCS_model(object):

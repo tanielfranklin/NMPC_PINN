@@ -37,8 +37,8 @@ pinn.lamb_l1 = tf.constant(1.0, dtype=tf.float32)  # x1 residue weight
 pinn.lamb_l2 = tf.constant(1.0, dtype=tf.float32)  # x3 residue weight
 pinn.lamb_l3 = tf.constant(1.0, dtype=tf.float32)  # x3 residue weight
 # #######################################
-local = "model_adam_200/"
-local = "model_adam_lbfgs/"
+local = "pinn_models/model_adam_200/"
+local = "pinn_models/model_adam_lbfgs/"
 pinn.u_model.load_weights(local+'model.h5')
 pinn_restored = restore_pinn_model(local)
 ######################################

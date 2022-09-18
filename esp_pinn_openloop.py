@@ -78,10 +78,6 @@ Xk = xss.reshape((xss.shape[0], 1))
 Ysp = yss
 HLim = np.vstack([ymax[1], ymin[1]])
 PINLim = np.vstack([ymax[0], ymin[0]])
-# Simulation Loop -------------------------------- ------------------------------
-tsim = 6.    # minutes
-nsim = int(60*tsim/Ts)   # number of steps
-uk = np.zeros((bcs.nu, int(nsim)))
 rows = []
 
 #Initial conditions for PINN predictions
@@ -96,6 +92,12 @@ yi,x_pinn=predictor.predict_pinn(Ui,Xi)
 X_Pinn,X_m=[],[]
 X_Pinn.append([0]+x_pinn[:,0].tolist())
 X_m.append([0]+xss[0:3,0].tolist())
+
+# Simulation Loop -------------------------------- ------------------------------
+tsim = 1.    # minutes
+nsim = int(60*tsim/Ts)   # number of steps
+uk = np.zeros((bcs.nu, int(nsim)))
+
 
 for k in range(nsim):
     print("Iteração:", k)
@@ -113,10 +115,10 @@ for k in range(nsim):
         bcs.update_BCS(pm,pr)
 
     elif tsim == 4.:
-        uk_1 = np.vstack([65., 90.])
+        uk_1 = np.vstack([65., 85.])
         
-    elif tsim == 6.:
-        pm=15e5
+    elif tsim == 5.5:
+        pm=23e5
         bcs.update_BCS(pm,pr)
     
     ui=np.vstack([uk_1,pm,pr]).T
@@ -145,25 +147,15 @@ for k in range(nsim):
     HLim = np.concatenate((HLim, np.vstack([ymax[1], ymin[1]])), axis=1)
     PINLim = np.concatenate((PINLim, np.vstack([ymax[0], ymin[0]])), axis=1)
     Xk = np.concatenate((Xk, x0.reshape((x0.shape[0], 1))), axis=1)
-    X_Pinn.append([k]+x_pinn[:,0].tolist())
-    X_m.append([k]+xpk[0:3,0].tolist())
+    X_Pinn.append([tsim]+x_pinn[:,0].tolist())
+    X_m.append([tsim]+xpk[0:3,0].tolist())
     
-df_pinn = pd.DataFrame(X_Pinn, columns=['k','pbh','pwh','q'])
-df_mod = pd.DataFrame(X_m, columns=['k','pbh','pwh','q'])
-
-# print(df_pinn.head())
-# print(df_mod.head())
-fig_res, axes = plt.subplots(3, 1)
-sns.lineplot('k', 'pbh', data=df_pinn,ax=axes[0])
-sns.lineplot(data=df_pinn, x='k', y='pwh', ax=axes[1])
-sns.lineplot(data=df_pinn, x='k', y='q', ax=axes[2])
-sns.lineplot(data=df_mod, x='k', y='pbh', ax=axes[0])
-sns.lineplot(data=df_mod, x='k', y='pwh', ax=axes[1])
-sns.lineplot(data=df_mod, x='k', y='q', ax=axes[2])
-plt.legend(labels=["Pinn","Model"], loc = 2, bbox_to_anchor = (1,1))
+df_pinn = pd.DataFrame(X_Pinn, columns=['t','pbh','pwh','q'])
+df_mod = pd.DataFrame(X_m, columns=['t','pbh','pwh','q'])
 
 
 grafico = PlotResult(bcs.Ts)
+grafico.plot_pinn_model(df_pinn,df_mod)
 grafico.plot_resultado(Xk, uk)
 grafico.plot_y(Ysp, Yk, HLim, PINLim)
 bcs.envelope.size_env = (4, 4)

@@ -1,6 +1,7 @@
 
 from matplotlib import pyplot as plt 
 import numpy as np
+import seaborn as sns
 
 class PlotResult(object):
     def __init__(self,Ts):
@@ -61,6 +62,33 @@ class PlotResult(object):
         ax1.set_xlabel('$Tempo (min)$' ,  fontsize=Font)
         #plt.legend(bbox_to_anchor=(1, 3.8), ncol = 3)
         return Fig
+    
+    def plot_pinn_model(self,df_pinn,df_mod):
+        df_mod['q']=df_mod['q']*3600
+        df_pinn['q']=df_pinn['q']*3600
+        df_mod['pbh']=df_mod['pbh']/1e5
+        df_pinn['pbh']=df_pinn['pbh']/1e5
+        df_mod['pwh']=df_mod['pwh']/1e5
+        df_pinn['pwh']=df_pinn['pwh']/1e5
+
+        # print(df_pinn.head())
+        # print(df_mod.head())
+        fig_res, axes = plt.subplots(3, 1)
+        sns.lineplot(data=df_pinn, x='t', y='pbh', ax=axes[0], legend="full")
+        sns.lineplot(data=df_mod, x='t', y='pbh', ax=axes[0],legend="full")
+        g1=sns.lineplot(data=df_pinn, x='t', y='pwh', ax=axes[1])
+        sns.lineplot(data=df_pinn, x='t', y='q', ax=axes[2])
+        g2=sns.lineplot(data=df_mod, x='t', y='pwh', ax=axes[1])
+        sns.lineplot(data=df_mod, x='t', y='q', ax=axes[2])
+        axes[0].set(xlabel=None)
+        axes[1].set(xlabel=None)
+        axes[0].set_xticklabels([])
+        axes[1].set_xticklabels([])
+        g1.set_label("Pinn")#  legend(label="pinn")
+        g2.set_label("Phenomena")
+        #print(g.set_label["text"])
+        g1.legend(loc='upper left',labels=["Pinn",'',"Model"])
+        return fig_res
 
 
 

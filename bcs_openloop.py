@@ -55,8 +55,6 @@ except Exception as e:
     print("An exception was raised here:")
     print(e)
 
-
-
 pm = 2e6   # pressão da manifold
 
 # Regiao de operação
@@ -88,32 +86,20 @@ for k in range(nsim):
     print("Iteração:", k)
     tsim = k*Ts/60
 
-    # changes on set-points Pintake
+    # changes on inputs
     if tsim == 0.4:
         uk_1=np.vstack([50., 70.])
     elif tsim == 1.4:
         uk_1 = np.vstack([65., 70.])
+    elif tsim == 2.:
+        uk_1 = np.vstack([55., 90.])
+    elif tsim == 4.:
+        uk_1 = np.vstack([60., 80.])
 
-
-    # elif k==200:
-    #    ymin[0,0] = 4.2e6
-    # else:
-    #     bcs.pm = 8e5
-    # if k==20:
-    #     utg=80
-    #     #uk_1[0,0]=55
-    # if k==int(50/Ts):
-    #     utg=90
-
-    # #ymin(1,1) = yss(1);    # Pressao de intake
-    # ymax[0,0] = ymin[0,0]; # Pressao de intake
-
-    # #ymin[0,0] = 4e6;
     # ## Limite Up e Downthrust
     hlim = bcs.envelope.Hlim(xpk[2]*3600)
     ymin[1, 0] = min(hlim)
     ymax[1, 0] = max(hlim)
-
     uk[:, k:k+1] = uk_1 
 
     # Plant

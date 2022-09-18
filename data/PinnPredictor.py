@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from data.parameters import Parameters
+from data.parameters_old import Parameters
 import keras
 
 class PinnPredictor(object):

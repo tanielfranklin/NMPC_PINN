@@ -25,8 +25,8 @@ class Parameters(object):
     # Normalizing factors
     self.prc,self.pr0=(1.4e7-1.2e7),1.2e7
     self.pm_c,self.pm0=(2.1e6-1.2e6),1.2e6
-    self.xc=np.vstack([self.pbc,self.pwc,self.qc,50,50])
-    self.x0=np.vstack([self.pbmin,self.pwmin,self.qmin,0,0])
+    self.xc=np.array([self.pbc,self.pwc,self.qc])
+    self.x0=np.array([self.pbmin,self.pwmin,self.qmin])
     self.uc=[60,100,self.pm_c,self.prc]
     self.u0=[0,0,self.pm0,self.pr0]
 

@@ -2,7 +2,7 @@ from data.utils import add_noise_norm, plot_u, plot_states_BCS
 import tensorflow as tf
 import numpy as np
 import pandas as pd
-from data.parameters import Parameters
+from data.parameters_old import Parameters
 
 
 def normalizar_x(x,xc,x0):

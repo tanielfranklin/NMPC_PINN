@@ -1,4 +1,4 @@
-from tictoc import tic, toc
+from data.tictoc import tic, toc
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt

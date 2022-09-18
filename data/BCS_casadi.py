@@ -1,5 +1,4 @@
 
-from ast import arg
 from casadi import MX, fabs, hcat, horzcat, vertcat, Opti, Function, nlpsol, sum1, qpsol, vcat, integrator
 from scipy.integrate import solve_ivp
 from casadi import sqrt as csqrt

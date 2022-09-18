@@ -23,6 +23,29 @@ class PinnPredictor(object):
     def norma_x(self,x):
         xn=[(x[:,i]-self.parameters.x0[i])/self.parameters.xc[i] for i in range(3)]
         return np.array(xn).T
+    
+    
+    def start_dataset(self,ui,xi):
+        # Normalizar
+        xi=self.parameters.normalizar_x(xi)
+        #xi=[xi[0,0],xi[0,1]]
+        ui=self.parameters.normalizar_u(ui)
+        Xi=tf.convert_to_tensor(np.repeat([xi],20,axis=1), dtype=tf.float32)# Replicate to build NN input
+        Ui=tf.convert_to_tensor(np.repeat([ui],20,axis=1), dtype=tf.float32) # Replicate to build NN input
+        return Ui,Xi
+    def update_inputs(self,y0,uk,Ui,Xi):
+        uk=self.parameters.normalizar_u(uk)
+        Xi=tf.concat([Xi[:,1:,:],y0[:,:,:-1]],1) # Remove older time-step and update states vector with new predictions (remove q)
+        Ui=tf.concat([Ui[:,1:,:],np.array([uk])],1) # Remove older time-step and update exogenous vector with the next time-step
+        return Ui,Xi
+    
+    def predict_pinn(self,Ui,Xi):
+        y=self.model(tf.concat([Ui,Xi],2))
+        yout=y[:,0,:].numpy()
+        yout=self.parameters.desnorm_x(yout.T)
+        return y,yout.T
+        
+    
     # def next_step(self,x):
     #     return self.model.predict(x)
     # def many_steps(self,tstart,nsim,Xdata,ydata,udata):

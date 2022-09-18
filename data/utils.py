@@ -7,6 +7,7 @@ import pickle
 def plot_test(y,yp,norm):
     #ind defines timestep of output to plot
     xc,x0=norm
+    xc,x0=xc[:3],x0[:3]
     #yp=model.predict(entradas)
     
     MSE= [np.mean(np.square(y[:,0,0]- yp[:,0,0])),
@@ -15,8 +16,9 @@ def plot_test(y,yp,norm):
     MSE_all=np.mean(np.square(y[:,0,:]- yp[:,0,:]))
     yp=yp[:,0,:]
     y=y[:,0,:]
-    yp=(yp*xc+x0)
-    y=y*xc+x0
+    yp=np.vstack([yp[i,:]*xc.T+x0.T for i in range(yp.shape[0])])
+    #yp=(yp*xc.T+x0.T)
+    y=np.vstack([y[i,:]*xc.T+x0.T for i in range(y.shape[0])])
     k=np.arange(y.shape[0])
     #print(y[:,0:1].shape)
     plt.figure(figsize=(20, 4))

@@ -42,3 +42,33 @@ class Parameters(object):
       xn=[(x[:,i]-self.x0[i])/self.xc[i] for i in range(2)]
     return np.array(xn).T
   
+  def norm_x(self, x):
+        """Normalize x 
+        Args:
+            x (_type_): Column array
+        Returns:
+            _type_: Column array
+        """
+        if x.shape[1] != 1:
+            raise ValueError
+        if x.shape[0]==3:
+            xn = (x-self.x0[0:3])/self.xc[0:3]
+        else:           
+            xn = (x-self.x0)/self.xc
+        return xn
+    
+  def desnorm_x(self, xn):
+        """Desnormalize x 
+        Args:
+            xn (_type_): Column array
+        Returns:
+            _type_: Column array
+        """
+        if xn.shape[1] != 1:
+            raise ValueError
+        if xn.shape[0]==3:
+            x = (xn.T*self.xc[0:3]+self.x0[0:3])
+        else:
+            x = (xn*self.xc+self.x0)
+        return x
+  

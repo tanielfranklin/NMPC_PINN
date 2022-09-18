@@ -15,6 +15,7 @@ class BCS_model(object):
         self.Ts, self.umin, self.umax, self.dumax = Ts, umin, umax, dumax
         self.J = None
         self.pm = 20e5
+        self.pr = 1.26e7
         self.ny = ny
         # self.nu=r.shape[0]
         self.nu = nu
@@ -49,7 +50,10 @@ class BCS_model(object):
         """
         if x.shape[1] != 1:
             raise ValueError
-        xn = (x-self.par.x0)/self.par.xc
+        if x.shape[0]==3:
+            xn = (x-self.par.x0[0:3])/self.par.xc[0:3]
+        else:           
+            xn = (x-self.par.x0)/self.par.xc
         return xn
     
     def desnorm_x(self, xn):
@@ -61,8 +65,15 @@ class BCS_model(object):
         """
         if xn.shape[1] != 1:
             raise ValueError
-        x = (xn*self.par.xc+self.par.x0)
+        if xn.shape[0]==3:
+            x = (xn*self.par.xc[0:3]+self.par.x0[0:3])
+        else:
+            x = (xn*self.par.xc+self.par.x0)
         return x
+    def update_BCS(self,pm,pr):
+        self.pr=pr
+        self.pm=pm
+        self.BCS_equation()
 
     def BCS_equation(self):
         x = self.x  # Estados
@@ -78,7 +89,7 @@ class BCS_model(object):
         fqref = u[0]
         zcref = u[1]
         pm = self.pm
-        pr = 1.26e7
+        pr = self.pr
         # pm=u[2]
         # pr=u[3]
 
